@@ -2,7 +2,7 @@ import os
 import unittest
 
 
-from fstringify import __version__, main, fstringify_code, pp_code_ast
+from fstringify import __version__, main, fstringify_code, pp_code_ast, fstringify_file
 
 
 class FstringifyTest(unittest.TestCase):
@@ -34,6 +34,36 @@ b = f"1+{d['k']}"
         result = fstringify_code(code)
 
         self.assertEqual(result, expected)
+
+    def test_mod_var_name_self(self):
+        code = """class Blah:
+
+    def __init__(self):
+        self.a = '1'
+        self.b = '2'
+
+    def run(self):
+        print('a val: %s' % self.a)
+        print('a val: %s b val: %s' % (self.a, self.b))
+"""
+        expected = """class Blah:
+
+    def __init__(self):
+        self.a = '1'
+        self.b = '2'
+
+    def run(self):
+        print(f'a val: {self.a}')
+        print(f'a val: {self.a} b val: {self.b}')
+"""
+
+        # pp_code_ast(code)
+        result = fstringify_code(code)
+        self.assertEqual(result, expected)
+
+    # def test_write_file(self):
+    #     fn = os.path.join(os.path.dirname(__file__), "example.py")
+    #     fstringify_file(fn)
 
 
 if __name__ == "__main__":

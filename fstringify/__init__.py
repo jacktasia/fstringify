@@ -122,17 +122,17 @@ def handle_from_mod_tuple(node):
     if len(node.right.elts) != len(matches):
         raise ValueError("string formatting length mismatch")
 
-    var_ids = list(map(lambda x: x.id, node.right.elts))
+    str_vars = list(map(lambda x: x, node.right.elts))
 
     # build result node
     result_node = ast.JoinedStr()
     result_node.values = []
-    var_ids.reverse()
+    str_vars.reverse()
     blocks = re.split(var_pattern, format_str)
     for block in blocks:
         if re.match(var_pattern, block):
             fv = ast.FormattedValue(
-                value=ast.Name(id=var_ids.pop()), conversion=-1, format_spec=None
+                value=str_vars.pop(), conversion=-1, format_spec=None
             )
             result_node.values.append(fv)
         else:
@@ -168,7 +168,7 @@ def handle_from_mod_generic_name(node):
 
 
 def handle_from_mod(node):
-    if isinstance(node.right, ast.Name):
+    if isinstance(node.right, (ast.Name, ast.Attribute)):
         return handle_from_mod_generic_name(node)
 
     elif isinstance(node.right, ast.Tuple):
@@ -197,7 +197,7 @@ class FstringifyTransformer(ast.NodeTransformer):
         do_change = (
             isinstance(node.left, ast.Str)
             and isinstance(node.op, ast.Mod)
-            and isinstance(node.right, (ast.Tuple, ast.Name, ast.Dict))
+            and isinstance(node.right, (ast.Tuple, ast.Name, ast.Dict, ast.Attribute))
         )
 
         if do_change:
