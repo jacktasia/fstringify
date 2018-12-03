@@ -41,23 +41,26 @@ b = f"1+{d['k']}"
     def __init__(self):
         self.a = '1'
         self.b = '2'
+        self.d = {'k': 'v'}
 
     def run(self):
         print('a val: %s' % self.a)
         print('a val: %s b val: %s' % (self.a, self.b))
+        print('dk val: %(k)s' % self.d)
 """
         expected = """class Blah:
 
     def __init__(self):
         self.a = '1'
         self.b = '2'
+        self.d = {'k': 'v'}
 
     def run(self):
         print(f'a val: {self.a}')
         print(f'a val: {self.a} b val: {self.b}')
+        print(f"dk val: {self.d['k']}")
 """
 
-        # pp_code_ast(code)
         result = fstringify_code(code)
         self.assertEqual(result, expected)
 

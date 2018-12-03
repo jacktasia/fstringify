@@ -90,8 +90,7 @@ def handle_from_mod_dict_name(node):
         if MOD_KEY_PATTERN.match(block):
             fv = ast.FormattedValue(
                 value=ast.Subscript(
-                    value=ast.Name(id=node.right.id),
-                    slice=ast.Index(value=ast.Str(s=var_keys.pop())),
+                    value=node.right, slice=ast.Index(value=ast.Str(s=var_keys.pop()))
                 ),
                 conversion=-1,
                 format_spec=None,
