@@ -27,6 +27,13 @@ b = f"1+{d['k']}"
 
         self.assertEqual(result, expected)
 
+    def test_mod_str_literal(self):
+        code = 'b = "1+%s+2" % "a"'
+        expected = "b = f\"1+{'a'}+2\"\n"
+        result = fstringify_code(code)
+
+        self.assertEqual(result, expected)
+
     def test_mod_tuple(self):
         code = 'b = "1+%s+2%s3" % (a, b)'
         expected = "b = f'1+{a}+2{b}3'\n"
@@ -64,9 +71,9 @@ b = f"1+{d['k']}"
         result = fstringify_code(code)
         self.assertEqual(result, expected)
 
-    # def test_write_file(self):
-    #     fn = os.path.join(os.path.dirname(__file__), "example.py")
-    #     fstringify_file(fn)
+    def test_write_file(self):
+        fn = os.path.join(os.path.dirname(__file__), "example.py")
+        fstringify_file(fn)
 
 
 if __name__ == "__main__":
