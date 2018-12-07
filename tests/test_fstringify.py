@@ -2,7 +2,16 @@ import os
 import unittest
 
 
-from fstringify import __version__, main, fstringify_code, pp_code_ast, fstringify_file
+from fstringify import (
+    __version__,
+    main,
+    fstringify_code,
+    pp_code_ast,
+    fstringify_file,
+    fstringify_code_by_line,
+    get_indent,
+    force_double_quote_fstring,
+)
 
 
 class FstringifyTest(unittest.TestCase):
@@ -16,7 +25,6 @@ b = "1+%(k)s" % d
         expected = """d = {'k': 'blah'}
 b = f"1+{d['k']}"
 """
-
         result = fstringify_code(code)
         self.assertEqual(result, expected)
 
@@ -42,7 +50,7 @@ b = f"1+{d['k']}"
 
         self.assertEqual(result, expected)
 
-    def test_mod_var_name_self(self):
+    def test_var_name_self(self):
         code = """class Blah:
 
     def __init__(self):
@@ -52,8 +60,12 @@ b = f"1+{d['k']}"
 
     def run(self):
         print('a val: %s' % self.a)
-        print('a val: %s b val: %s' % (self.a, self.b))
+        print('a val: %s b val: %s'
+% (self.a,
+self.b))
         print('dk val: %(k)s' % self.d)
+        asdf = 1
+        print('damnf', 'asdf: %s' % asdf)
 """
         expected = """class Blah:
 
@@ -63,17 +75,85 @@ b = f"1+{d['k']}"
         self.d = {'k': 'v'}
 
     def run(self):
-        print(f'a val: {self.a}')
-        print(f'a val: {self.a} b val: {self.b}')
+        print(f"a val: {self.a}")
+        print(f"a val: {self.a} b val: {self.b}")
         print(f"dk val: {self.d['k']}")
+        asdf = 1
+        print('damnf', f"asdf: {asdf}")
 """
-
-        result = fstringify_code(code)
+        result = fstringify_code_by_line(code)
         self.assertEqual(result, expected)
 
     def test_write_file(self):
-        fn = os.path.join(os.path.dirname(__file__), "example.py")
+        # fn = os.path.join(os.path.dirname(__file__), "example.py")
+        fn = "/home/jack/code/haizhongwen/server/gcs.py"
         fstringify_file(fn)
+
+    def test_get_indent(self):
+        self.assertEqual("    ", get_indent("    code"))
+        self.assertEqual("", get_indent("code"))
+
+    def test_force_double_quote_fstring(self):
+        code = "    f'a val: {self.a} b val: {self.b}'"
+        expected = '    f"a val: {self.a} b val: {self.b}"'
+        self.assertEqual(force_double_quote_fstring(code), expected)
+
+    def test_force_double_quote_fstring_has_double(self):
+        code = "f'a val: {self.a} \"b\" val: {self.b}'"
+        expected = "f'a val: {self.a} \"b\" val: {self.b}'"
+        self.assertEqual(force_double_quote_fstring(code), expected)
+
+    def test_force_double_quote_fstring_edge(self):
+        code = "'asdf'"
+        expected = "'asdf'"
+        self.assertEqual(force_double_quote_fstring(code), expected)
+
+    def test_force_double_quote_fstring_edge2(self):
+        code = "print('asdf')"
+        expected = "print('asdf')"
+        self.assertEqual(force_double_quote_fstring(code), expected)
+
+    # failing...
+    def test_force_double_quote_fstring_edge3(self):
+        code = "print('damnf', f'asdf: {asdf}')"
+        expected = "print('damnf', f\"asdf: {asdf}\")"
+        result = force_double_quote_fstring(code, (True, 1, 15))
+
+        self.assertEqual(result, expected)
+
+    def test_force_double_quote_fstring_edge4(self):
+        code = "    print('damnf', f'asdf: {asdf}')"
+        expected = "    print('damnf', f\"asdf: {asdf}\")"
+        result = force_double_quote_fstring(code, (True, 1, 19))
+
+        self.assertEqual(result, expected)
+
+    def test_multi_line_self(self):
+        code = """
+class Foo:
+    def __init__(self):
+        self.a = '1'
+        sys.exit(
+            "Exiting due to receiving %d status code when expecting %d."
+            % (r.status_code, expected_status)
+        )
+"""
+        expected = """
+class Foo:
+    def __init__(self):
+        self.a = '1'
+        sys.exit(
+            "Exiting due to receiving {r.status_code} status code when expecting {expected_status}."
+        )
+"""
+
+        result = fstringify_code_by_line(code)
+
+        print("expected")
+        print(expected)
+        print("result")
+        print(result)
+        self.assertEqual(result, expected)
 
 
 if __name__ == "__main__":

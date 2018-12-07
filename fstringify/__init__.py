@@ -10,6 +10,7 @@ import astor
 
 MOD_KEY_PATTERN = re.compile("(%\([^)]+\)s)")
 MOD_KEY_NAME_PATTERN = re.compile("%\(([^)]+)\)s")
+INDENT_PATTERN = re.compile("^(\W+)")
 
 
 def ast_to_dict(node):
@@ -177,10 +178,16 @@ def handle_from_mod(node):
         print("~~~~ Dict mod strings don't make sense to f-strings")
         return node
 
-    raise RuntimeError("Unexpected fstringify error")
+    raise RuntimeError("unexpected `node.right` class")
 
 
 class FstringifyTransformer(ast.NodeTransformer):
+    def __init__(self):
+        super().__init__()
+        self.counter = 0
+        self.lineno = -1
+        self.col_offset = -1
+
     def visit_BinOp(self, node):
         """Convert `ast.BinOp` to `ast.JoinedStr` f-string
 
@@ -202,27 +209,139 @@ class FstringifyTransformer(ast.NodeTransformer):
         )
 
         if do_change:
-            return handle_from_mod(node)
+            self.counter += 1
+            self.lineno = node.lineno
+            self.col_offset = node.col_offset
+            print(
+                "lineno",
+                node.lineno,
+                "coloffset",
+                node.col_offset,
+                "id",
+                node.left.s,
+                "node right coloffset",
+                node.right.col_offset,
+            )
+            # pp_ast(node.left)
+            # pp_ast(node.right)
+            result_node = handle_from_mod(node)
+            return result_node
 
         return node
 
 
 def fstringify_node(node):
-    return FstringifyTransformer().visit(node)
+    ft = FstringifyTransformer()
+    result = ft.visit(node)
+    # print("counter", ft.counter)
+    return (result, (ft.counter > 0, ft.lineno, ft.col_offset))
+    # return FstringifyTransformer().visit(node)
 
 
-def fstringify_code(code):
+def fstringify_code(code, include_meta=False):
     tree = ast.parse(code)
-    converted = fstringify_node(tree)
-    new_code = astor.to_source(converted)
-    return new_code
+    converted, meta = fstringify_node(tree)
+    if meta[0]:
+        new_code = astor.to_source(converted)
+        print("converting..........", code, "->", new_code)
+        if include_meta:
+            return new_code, meta
+        return new_code
+
+    if include_meta:
+        return code, (False, -1, -1)
+    return code
+
+
+# def inject_after_indent(line, to_inject):
+#     indented = INDENT_PATTERN.match(line)
+#     if indented:
+#         return indented[0] + to_inject + line.lstrip()
+
+#     return to_inject + line
+
+
+def get_indent(line):
+    indented = INDENT_PATTERN.match(line)
+    if indented:
+        return indented[0]
+
+    return ""
+
+
+# def force_double_quote_fstring(code):
+#     print("~~~~~~~~~ GOT", code)
+#     indented = get_indent(code)
+#     strip_code = code.strip()
+#     if not strip_code.startswith("f'"):
+#         return code
+
+#     if len(strip_code) < 3:
+#         return code
+
+#     contents = strip_code[2:-1]
+#     if '"' not in contents:
+#         return indented + 'f"' + contents + '"'
+
+#     return code
+
+
+def force_double_quote_fstring(code, meta=None):
+    if "f'" in code:
+        other = code.find("f'")
+        start = meta[2] or other if meta else other
+        print("~~~~~~~~start", start, "other", other)
+        end = code.rfind("'")
+        if start + 1 < end:  # f at the end of the'asdf'
+            prefix = code[:start]
+            suffix = code[end + 1 :]
+            contents = code[start + 2 : end]
+            if '"' not in contents:
+                return prefix + 'f"' + contents + '"' + suffix
+
+    return code
+
+
+def fstringify_code_by_line(code):
+    result = []
+    line = None
+    for raw_line in code.split("\n"):
+        if line:
+            line += "\n" + raw_line
+        else:
+            line = raw_line
+
+        try:
+            # indented = INDENT_PATTERN.match(line)
+            indented = get_indent(line)
+
+            code_line, meta = fstringify_code(line.strip(), include_meta=True)
+            if meta[0]:
+                # meta[2] = meta[2]
+                result_line = indented + force_double_quote_fstring(code_line, meta)
+                result.append(result_line.rstrip())
+                line = None
+            else:
+                result.append(line)
+                line = None
+        except SyntaxError as e:
+            if line.rstrip().endswith(":"):
+                result.append(line)
+                line = None
+        except Exception as e2:
+            # print(e)
+            result.append(line)
+            line = None
+
+    return "\n".join(result)
 
 
 def fstringify_file(fn):
     with open(fn) as f:
-        new_code = fstringify_code(f.read())
+        new_code = fstringify_code_by_line(f.read())
 
-    with open(fn + ".fs", "w") as f:
+    # with open(fn + ".fs", "w") as f:
+    with open(fn, "w") as f:
         f.write(new_code)
 
 
@@ -235,7 +354,7 @@ def pp_code_ast(code):
     Returns nothing print AST representation to stdout
     """
     tree = ast.parse(code)
-    converted = fstringify_node(tree)
+    converted, _ = fstringify_node(tree)
     pp_ast(converted)
 
 
