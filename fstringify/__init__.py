@@ -8,9 +8,12 @@ import re
 
 import astor
 
+from fstringify.utils import force_double_quote_fstring
+
+
 MOD_KEY_PATTERN = re.compile("(%\([^)]+\)s)")
 MOD_KEY_NAME_PATTERN = re.compile("%\(([^)]+)\)s")
-INDENT_PATTERN = re.compile("^(\W+)")
+INDENT_PATTERN = re.compile("^(\ +)")
 
 
 def ast_to_dict(node):
@@ -212,18 +215,6 @@ class FstringifyTransformer(ast.NodeTransformer):
             self.counter += 1
             self.lineno = node.lineno
             self.col_offset = node.col_offset
-            print(
-                "lineno",
-                node.lineno,
-                "coloffset",
-                node.col_offset,
-                "id",
-                node.left.s,
-                "node right coloffset",
-                node.right.col_offset,
-            )
-            # pp_ast(node.left)
-            # pp_ast(node.right)
             result_node = handle_from_mod(node)
             return result_node
 
@@ -233,32 +224,38 @@ class FstringifyTransformer(ast.NodeTransformer):
 def fstringify_node(node):
     ft = FstringifyTransformer()
     result = ft.visit(node)
-    # print("counter", ft.counter)
-    return (result, (ft.counter > 0, ft.lineno, ft.col_offset))
-    # return FstringifyTransformer().visit(node)
+    return (
+        result,
+        dict(
+            changed=ft.counter > 0,
+            lineno=ft.lineno,
+            col_offset=ft.col_offset,
+            skip=False,
+        ),
+    )
 
 
 def fstringify_code(code, include_meta=False):
-    tree = ast.parse(code)
-    converted, meta = fstringify_node(tree)
-    if meta[0]:
+    skip = False
+    converted = None
+    meta = dict(changed=False, lineno=1, col_offset=0, skip=False)
+    try:
+        tree = ast.parse(code)
+        converted, meta = fstringify_node(tree)
+    except SyntaxError as e:
+        meta["skip"] = code.rstrip().endswith(":")
+    except Exception as e2:
+        meta["skip"] = False
+
+    if meta["changed"] and converted:
         new_code = astor.to_source(converted)
-        print("converting..........", code, "->", new_code)
         if include_meta:
             return new_code, meta
         return new_code
 
     if include_meta:
-        return code, (False, -1, -1)
+        return code, meta
     return code
-
-
-# def inject_after_indent(line, to_inject):
-#     indented = INDENT_PATTERN.match(line)
-#     if indented:
-#         return indented[0] + to_inject + line.lstrip()
-
-#     return to_inject + line
 
 
 def get_indent(line):
@@ -269,69 +266,58 @@ def get_indent(line):
     return ""
 
 
-# def force_double_quote_fstring(code):
-#     print("~~~~~~~~~ GOT", code)
-#     indented = get_indent(code)
-#     strip_code = code.strip()
-#     if not strip_code.startswith("f'"):
-#         return code
-
-#     if len(strip_code) < 3:
-#         return code
-
-#     contents = strip_code[2:-1]
-#     if '"' not in contents:
-#         return indented + 'f"' + contents + '"'
-
-#     return code
+def trim_list(l):
+    last = l.pop()
+    l.pop()
+    l.append(last)
+    return l
 
 
-def force_double_quote_fstring(code, meta=None):
-    if "f'" in code:
-        other = code.find("f'")
-        start = meta[2] or other if meta else other
-        print("~~~~~~~~start", start, "other", other)
-        end = code.rfind("'")
-        if start + 1 < end:  # f at the end of the'asdf'
-            prefix = code[:start]
-            suffix = code[end + 1 :]
-            contents = code[start + 2 : end]
-            if '"' not in contents:
-                return prefix + 'f"' + contents + '"' + suffix
-
-    return code
+def trim_list_until(l, length):
+    while len(l) > length:
+        l = trim_list(l)
+    return l
 
 
-def fstringify_code_by_line(code):
+def fstringify_code_by_line(code, debug=False):
     result = []
     line = None
+    use_indented = None
+    do_add = False
     for raw_line in code.split("\n"):
+
+        if line is None and (raw_line.strip() == "" or not raw_line):
+            result.append(raw_line)
+            continue
+
+        indented = get_indent(raw_line)
         if line:
-            line += "\n" + raw_line
+            line += "\n" + raw_line.strip()
         else:
             line = raw_line
 
-        try:
-            # indented = INDENT_PATTERN.match(line)
-            indented = get_indent(line)
+        if use_indented is None:
+            use_indented = []
 
-            code_line, meta = fstringify_code(line.strip(), include_meta=True)
-            if meta[0]:
-                # meta[2] = meta[2]
-                result_line = indented + force_double_quote_fstring(code_line, meta)
-                result.append(result_line.rstrip())
-                line = None
-            else:
-                result.append(line)
-                line = None
-        except SyntaxError as e:
-            if line.rstrip().endswith(":"):
-                result.append(line)
-                line = None
-        except Exception as e2:
-            # print(e)
-            result.append(line)
+        use_indented.append(indented)
+        code_line, meta = fstringify_code(line.lstrip(), include_meta=True)
+        if meta["changed"]:
+            code_line = force_double_quote_fstring(code_line)
+            do_add = True
+        elif meta["skip"]:
+            do_add = True
+
+        if do_add:
+            code_line_parts = code_line.strip().split("\n")
+            use_indented = trim_list_until(use_indented, len(code_line_parts))
+            for idx, cline in enumerate(code_line_parts):
+                if debug:
+                    print("tab amount", len(use_indented[idx]), "line", cline.lstrip())
+                result.append(use_indented[idx] + cline.lstrip())
+
             line = None
+            use_indented = None
+            do_add = False
 
     return "\n".join(result)
 

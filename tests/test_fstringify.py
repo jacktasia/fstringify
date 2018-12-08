@@ -10,8 +10,9 @@ from fstringify import (
     fstringify_file,
     fstringify_code_by_line,
     get_indent,
-    force_double_quote_fstring,
 )
+
+from fstringify.utils import force_double_quote_fstring
 
 
 class FstringifyTest(unittest.TestCase):
@@ -19,39 +20,42 @@ class FstringifyTest(unittest.TestCase):
         self.assertEqual(__version__, "0.1.0")
 
     def test_mod_dict_name(self):
-        code = """d = {"k": "blah"}
-b = "1+%(k)s" % d
-"""
-        expected = """d = {'k': 'blah'}
-b = f"1+{d['k']}"
-"""
-        result = fstringify_code(code)
+        code = """
+        d = {"k": "blah"}
+        b = "1+%(k)s" % d
+        """
+        expected = """
+        d = {'k': 'blah'}
+        b = f"1+{d['k']}"
+        """
+        # result, meta = fstringify_code(code, include_meta=True)
+        result = fstringify_code_by_line(code)
+
+        # print("meta")
+        # print(meta)
         self.assertEqual(result, expected)
 
     def test_mod_var_name(self):
         code = 'b = "1+%s+2" % a'
         expected = "b = f'1+{a}+2'\n"
         result = fstringify_code(code)
-
         self.assertEqual(result, expected)
 
     def test_mod_str_literal(self):
         code = 'b = "1+%s+2" % "a"'
         expected = "b = f\"1+{'a'}+2\"\n"
         result = fstringify_code(code)
-
         self.assertEqual(result, expected)
 
     def test_mod_tuple(self):
         code = 'b = "1+%s+2%s3" % (a, b)'
         expected = "b = f'1+{a}+2{b}3'\n"
-
         result = fstringify_code(code)
-
         self.assertEqual(result, expected)
 
     def test_var_name_self(self):
-        code = """class Blah:
+        code = """
+class Blah:
 
     def __init__(self):
         self.a = '1'
@@ -60,14 +64,13 @@ b = f"1+{d['k']}"
 
     def run(self):
         print('a val: %s' % self.a)
-        print('a val: %s b val: %s'
-% (self.a,
-self.b))
+        print('a val: %s b val: %s' % (self.a, self.b))
         print('dk val: %(k)s' % self.d)
         asdf = 1
         print('damnf', 'asdf: %s' % asdf)
-"""
-        expected = """class Blah:
+    """
+        expected = """
+class Blah:
 
     def __init__(self):
         self.a = '1'
@@ -80,8 +83,9 @@ self.b))
         print(f"dk val: {self.d['k']}")
         asdf = 1
         print('damnf', f"asdf: {asdf}")
-"""
+    """
         result = fstringify_code_by_line(code)
+
         self.assertEqual(result, expected)
 
     def test_write_file(self):
@@ -117,14 +121,14 @@ self.b))
     def test_force_double_quote_fstring_edge3(self):
         code = "print('damnf', f'asdf: {asdf}')"
         expected = "print('damnf', f\"asdf: {asdf}\")"
-        result = force_double_quote_fstring(code, (True, 1, 15))
+        result = force_double_quote_fstring(code)
 
         self.assertEqual(result, expected)
 
     def test_force_double_quote_fstring_edge4(self):
         code = "    print('damnf', f'asdf: {asdf}')"
         expected = "    print('damnf', f\"asdf: {asdf}\")"
-        result = force_double_quote_fstring(code, (True, 1, 19))
+        result = force_double_quote_fstring(code)
 
         self.assertEqual(result, expected)
 
@@ -143,16 +147,16 @@ class Foo:
     def __init__(self):
         self.a = '1'
         sys.exit(
-            "Exiting due to receiving {r.status_code} status code when expecting {expected_status}."
+            f"Exiting due to receiving {r.status_code} status code when expecting {expected_status}."
         )
 """
 
         result = fstringify_code_by_line(code)
 
-        print("expected")
-        print(expected)
-        print("result")
-        print(result)
+        # print("expected")
+        # print(expected)
+        # print("result")
+        # print(result)
         self.assertEqual(result, expected)
 
 
