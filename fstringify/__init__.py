@@ -5,6 +5,8 @@ import ast
 import json
 import pprint
 import re
+import os
+import sys
 
 import astor
 
@@ -21,7 +23,7 @@ def ast_to_dict(node):
 
     This is mainly for powering `pp_ast` (pretty printing).
 
-    Forked from:
+    derived from `jsonify_ast` here:
     https://github.com/maligree/python-ast-explorer/blob/master/parse.py#L7
 
     Args:
@@ -334,6 +336,23 @@ def fstringify_file(fn):
         f.write(new_code)
 
 
+def fstringify_dir(in_dir):
+    use_dir = os.path.abspath(in_dir)
+    print("use_dir", use_dir)
+    if not os.path.exists(use_dir):
+        print(f"`{in_dir}` not found")
+        sys.exit(1)
+
+    files = astor.code_to_ast.find_py_files(use_dir)
+
+    for f in files:
+        file_path = os.path.join(f[0], f[1])
+        print("Applying", file_path)
+        fstringify_file(file_path)
+
+    return "Done."
+
+
 def pp_code_ast(code):
     """Pretty print code's AST to stdout.
 
@@ -348,7 +367,13 @@ def pp_code_ast(code):
 
 
 def main():
-    print("fstringify", __version__)
+    if len(sys.argv) == 1:
+        print("fstringify", __version__)
+        sys.exit(0)
+
+    src_path = sys.argv[1]
+
+    fstringify_dir(src_path)
 
 
 if __name__ == "__main__":
