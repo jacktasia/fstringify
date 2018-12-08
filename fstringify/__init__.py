@@ -235,12 +235,14 @@ def fstringify_node(node):
     )
 
 
-def fstringify_code(code, include_meta=False):
+def fstringify_code(code, include_meta=False, debug=False):
     skip = False
     converted = None
     meta = dict(changed=False, lineno=1, col_offset=0, skip=False)
     try:
         tree = ast.parse(code)
+        if debug:
+            pp_ast(tree)
         converted, meta = fstringify_node(tree)
     except SyntaxError as e:
         meta["skip"] = code.rstrip().endswith(":")
@@ -300,7 +302,8 @@ def fstringify_code_by_line(code, debug=False):
             use_indented = []
 
         use_indented.append(indented)
-        code_line, meta = fstringify_code(line.lstrip(), include_meta=True)
+        code_line, meta = fstringify_code(line.lstrip(), include_meta=True, debug=debug)
+
         if meta["changed"]:
             code_line = force_double_quote_fstring(code_line)
             do_add = True
