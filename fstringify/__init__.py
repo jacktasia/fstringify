@@ -238,13 +238,20 @@ def fstringify_node(node):
 
 
 def fstringify_code(code, include_meta=False, debug=False):
-    skip = False
+    # skip = False
     converted = None
-    meta = dict(changed=False, lineno=1, col_offset=0, skip=False)
+    meta = dict(changed=False, lineno=1, col_offset=0, skip=True)
+
+    code_strip = code.strip()
+
+    if code_strip == "" or code_strip.startswith("#"):
+        meta["skip"] = True
+        return code, meta if include_meta else code
+
     try:
         tree = ast.parse(code)
-        if debug:
-            pp_ast(tree)
+        # if debug:
+        #     pp_ast(tree)
         converted, meta = fstringify_node(tree)
     except SyntaxError as e:
         meta["skip"] = code.rstrip().endswith(":")
@@ -280,31 +287,68 @@ def trim_list(l):
 def trim_list_until(l, length):
     while len(l) > length:
         l = trim_list(l)
+
+    while len(l) < length:
+        print("~~~~~~~~~~~%%%%%%~~~~~~~~~~~ ADDING", l)
+        l.append(l[-1])
     return l
+
+
+# @staticmethod
+# def scope_to_str(scope_array):
+#     return "\n".join(scope_array)
 
 
 def fstringify_code_by_line(code, debug=False):
     result = []
-    line = None
-    use_indented = None
+    scope = []
+    comments = {}
+    use_indented = []
     do_add = False
+
     for raw_line in code.split("\n"):
 
-        if line is None and (raw_line.strip() == "" or not raw_line):
-            result.append(raw_line)
-            continue
+        # raw_line_strip = raw_line.strip()
+        # if raw_line_strip == "" or raw_line_strip.startswith("#") or not raw_line:
+        #     if raw_line:
+        #         print("~~~", "WC", raw_line)
+        #     result.append(raw_line)
+        #     # line = None
+        #     # use_indented = None
+        #     continue
+        # if use_indented is None:
+        #     use_indented = []
 
         indented = get_indent(raw_line)
-        if line:
-            line += "\n" + raw_line.strip()
+        scope.append(raw_line.strip())
+
+        if raw_line.strip().startswith("#"):
+            comments[len(scope) - 1] = raw_line
         else:
-            line = raw_line
+            use_indented.append(indented)
+        # if scope:
+        #     # use `current_scope` array
+        #     print(">>>>>> ADDED TO LINE", raw_line.strip())
+        #     # line += "\n" + raw_line.strip()
+        #     scope.append(raw_line.strip())
+        # else:
+        #     line = raw_line
 
-        if use_indented is None:
-            use_indented = []
+        # line_strip = line.strip()
+        # if line_strip == "" or line_strip.startswith("#"):
+        #     do_add = True
+        #     code_line = line
+        # else:
 
-        use_indented.append(indented)
-        code_line, meta = fstringify_code(line.lstrip(), include_meta=True, debug=debug)
+        # code_line, meta = fstringify_code(line.lstrip(), include_meta=True, debug=debug)
+        code_line, meta = fstringify_code(
+            "\n".join(scope), include_meta=True, debug=debug
+        )
+
+        if debug:
+            print("----- DEBUG \/ ----")
+            print("~~~meta", meta, "| line", scope, "| raw_line", raw_line)
+            print("------------------")
 
         if meta["changed"]:
             code_line = force_double_quote_fstring(code_line)
@@ -315,13 +359,24 @@ def fstringify_code_by_line(code, debug=False):
         if do_add:
             code_line_parts = code_line.strip().split("\n")
             use_indented = trim_list_until(use_indented, len(code_line_parts))
+
+            print(">>>>>>>>>>>>>>>>>>>>>", code_line_parts)
+            for k, v in comments.items():
+                print("k", k, type(k), "v", v, "comments", comments)
+                if code_line_parts[k] != v:
+                    code_line_parts.insert(k, v)
+                    use_indented.insert(k, get_indent(v))
+
             for idx, cline in enumerate(code_line_parts):
                 if debug:
-                    print("tab amount", len(use_indented[idx]), "line", cline.lstrip())
+                    print(
+                        "\t\ttab amount", len(use_indented[idx]), "line", cline.lstrip()
+                    )
                 result.append(use_indented[idx] + cline.lstrip())
 
-            line = None
-            use_indented = None
+            comments = {}
+            scope = []
+            use_indented = []
             do_add = False
 
     return "\n".join(result)
