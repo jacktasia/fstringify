@@ -232,7 +232,7 @@ def fstringify_node(node):
             changed=ft.counter > 0,
             lineno=ft.lineno,
             col_offset=ft.col_offset,
-            skip=False,
+            skip=True,
         ),
     )
 
@@ -288,57 +288,31 @@ def trim_list_until(l, length):
     while len(l) > length:
         l = trim_list(l)
 
+    filler = l[-1] if l else ""
     while len(l) < length:
-        print("~~~~~~~~~~~%%%%%%~~~~~~~~~~~ ADDING", l)
-        l.append(l[-1])
+        l.append(filler)
     return l
-
-
-# @staticmethod
-# def scope_to_str(scope_array):
-#     return "\n".join(scope_array)
 
 
 def fstringify_code_by_line(code, debug=False):
     result = []
     scope = []
+    raw_scope = []
     comments = {}
     use_indented = []
     do_add = False
+    change_add = False
 
     for raw_line in code.split("\n"):
 
-        # raw_line_strip = raw_line.strip()
-        # if raw_line_strip == "" or raw_line_strip.startswith("#") or not raw_line:
-        #     if raw_line:
-        #         print("~~~", "WC", raw_line)
-        #     result.append(raw_line)
-        #     # line = None
-        #     # use_indented = None
-        #     continue
-        # if use_indented is None:
-        #     use_indented = []
-
         indented = get_indent(raw_line)
         scope.append(raw_line.strip())
+        raw_scope.append(raw_line)
 
         if raw_line.strip().startswith("#"):
             comments[len(scope) - 1] = raw_line
         else:
             use_indented.append(indented)
-        # if scope:
-        #     # use `current_scope` array
-        #     print(">>>>>> ADDED TO LINE", raw_line.strip())
-        #     # line += "\n" + raw_line.strip()
-        #     scope.append(raw_line.strip())
-        # else:
-        #     line = raw_line
-
-        # line_strip = line.strip()
-        # if line_strip == "" or line_strip.startswith("#"):
-        #     do_add = True
-        #     code_line = line
-        # else:
 
         # code_line, meta = fstringify_code(line.lstrip(), include_meta=True, debug=debug)
         code_line, meta = fstringify_code(
@@ -352,30 +326,43 @@ def fstringify_code_by_line(code, debug=False):
 
         if meta["changed"]:
             code_line = force_double_quote_fstring(code_line)
+            change_add = True
             do_add = True
         elif meta["skip"]:
             do_add = True
 
         if do_add:
-            code_line_parts = code_line.strip().split("\n")
+            if change_add:
+                code_line_parts = code_line.strip().split("\n")
+            else:
+                code_line_parts = raw_scope
+
             use_indented = trim_list_until(use_indented, len(code_line_parts))
 
-            print(">>>>>>>>>>>>>>>>>>>>>", code_line_parts)
-            for k, v in comments.items():
-                print("k", k, type(k), "v", v, "comments", comments)
-                if code_line_parts[k] != v:
-                    code_line_parts.insert(k, v)
-                    use_indented.insert(k, get_indent(v))
+            if debug:
+                print(">>>>>>>>>>>>>>>>>>>>>", code_line_parts)
+
+            if change_add:
+                for k, v in comments.items():
+                    if debug:
+                        print("k", k, type(k), "v", v, "comments", comments)
+                    if code_line_parts[k] != v:
+                        code_line_parts.insert(k, v)
+                        use_indented.insert(k, get_indent(v))
 
             for idx, cline in enumerate(code_line_parts):
                 if debug:
                     print(
                         "\t\ttab amount", len(use_indented[idx]), "line", cline.lstrip()
                     )
-                result.append(use_indented[idx] + cline.lstrip())
+                indent = use_indented[idx] if change_add else ""
+                code = cline.lstrip() if change_add else cline
+                result.append(indent + code)
 
+            change_add = False
             comments = {}
             scope = []
+            raw_scope = []
             use_indented = []
             do_add = False
 

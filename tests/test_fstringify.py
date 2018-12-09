@@ -24,6 +24,8 @@ class FstringifyTest(unittest.TestCase):
         if result != expected:
             df = difflib.unified_diff(expected.split("\n"), result.split("\n"))
             print("\nASSERT CODE EQUAL FAILED DIFF:")
+            print("RESULT:")
+            print(result)
             print("-------------------------------")
             for line_diff in df:
                 if line_diff.strip() == "" or line_diff in ("--- \n", "+++ \n", "\n"):
@@ -42,7 +44,7 @@ class FstringifyTest(unittest.TestCase):
         b = "1+%(k)s" % d
         """
         expected = """
-        d = {'k': 'blah'}
+        d = {"k": "blah"}
         b = f"1+{d['k']}"
         """
         result = fstringify_code_by_line(code)
@@ -109,10 +111,10 @@ class Blah:
 
         self.assertCodeEqual(result, expected)
 
-    def test_write_file(self):
-        # fn = os.path.join(os.path.dirname(__file__), "example.py")
-        fn = "/home/jack/code/haizhongwen/server/gcs.py"
-        fstringify_file(fn)
+    # def test_write_file(self):
+    #     # fn = os.path.join(os.path.dirname(__file__), "example.py")
+    #     fn = "/home/jack/code/haizhongwen/server/gcs.py"
+    #     fstringify_file(fn)
 
     def test_get_indent(self):
         self.assertCodeEqual("    ", get_indent("    code"))
@@ -174,6 +176,17 @@ class Foo:
 
         result = fstringify_code_by_line(code)
         self.assertCodeEqual(result, expected)
+
+    def test_noop(self):
+        code = """
+def cmd_test():
+    # TODO: move this into its own functions
+    ensure_hsk_data()
+    data = get_quiz_data()
+"""
+
+        result = fstringify_code_by_line(code, debug=False)
+        self.assertCodeEqual(result, code)
 
 
 if __name__ == "__main__":
