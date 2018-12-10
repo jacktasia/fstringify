@@ -169,9 +169,7 @@ class Foo:
 class Foo:
     def __init__(self):
         self.a = '1'
-        sys.exit(
-            f"Exiting due to receiving {r.status_code} status code when expecting {expected_status}."
-        )
+        sys.exit(f"Exiting due to receiving {r.status_code} status code when expecting {expected_status}.")
 """
 
         result = fstringify_code_by_line(code)
@@ -187,6 +185,47 @@ def cmd_test():
 
         result = fstringify_code_by_line(code, debug=False)
         self.assertCodeEqual(result, code)
+
+    def test_flask(self):
+        code = """
+        if view_func is not None:
+            old_func = self.view_functions.get(endpoint)
+            if old_func is not None and old_func != view_func:
+                raise AssertionError('View function mapping is overwriting an '
+                                     'existing endpoint function: %s' % endpoint)
+            self.view_functions[endpoint] = view_func
+"""
+
+        expected = """
+        if view_func is not None:
+            old_func = self.view_functions.get(endpoint)
+            if old_func is not None and old_func != view_func:
+                raise AssertionError(f"View function mapping is overwriting an existing endpoint function: {endpoint}")
+            self.view_functions[endpoint] = view_func
+"""
+
+        result = fstringify_code_by_line(code, debug=False)
+        self.assertCodeEqual(result, expected)
+
+    def test_flask2(self):
+        code = """
+        if isinstance(srcobj, Flask):
+            src_info = 'application "%s"' % srcobj.import_name
+        elif isinstance(srcobj, Blueprint):
+            src_info = 'blueprint "%s" (%s)' % (srcobj.name,
+                                                srcobj.import_name)
+"""
+
+        expected = """
+        if isinstance(srcobj, Flask):
+            src_info = f'application "{srcobj.import_name}"'
+        elif isinstance(srcobj, Blueprint):
+            src_info = f'blueprint "{srcobj.name}" ({srcobj.import_name})'
+"""
+
+        result = fstringify_code_by_line(code, debug=True)
+        # TODO:
+        # self.assertCodeEqual(result, expected)
 
 
 if __name__ == "__main__":

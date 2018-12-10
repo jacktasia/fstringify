@@ -303,8 +303,10 @@ def fstringify_code_by_line(code, debug=False):
     do_add = False
     change_add = False
 
-    for raw_line in code.split("\n"):
+    raw_code_lines = code.split("\n")
 
+    for line_idx, raw_line in enumerate(raw_code_lines):
+        lineno = line_idx + 1
         indented = get_indent(raw_line)
         scope.append(raw_line.strip())
         raw_scope.append(raw_line)
@@ -314,15 +316,9 @@ def fstringify_code_by_line(code, debug=False):
         else:
             use_indented.append(indented)
 
-        # code_line, meta = fstringify_code(line.lstrip(), include_meta=True, debug=debug)
         code_line, meta = fstringify_code(
             "\n".join(scope), include_meta=True, debug=debug
         )
-
-        if debug:
-            print("----- DEBUG \/ ----")
-            print("~~~meta", meta, "| line", scope, "| raw_line", raw_line)
-            print("------------------")
 
         if meta["changed"]:
             code_line = force_double_quote_fstring(code_line)
@@ -330,6 +326,23 @@ def fstringify_code_by_line(code, debug=False):
             do_add = True
         elif meta["skip"]:
             do_add = True
+
+        if debug:
+            print(
+                ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+                f"{lineno}"
+                ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+            )
+            print("___RAW___")
+            print(raw_line)
+            print("___META___")
+            print("\t", meta)
+            print("___INDENT___", "\n\t", len(indented))
+            print("___CHANGE___", "\n\t", change_add)
+            print("___ADD___   ", "\n\t", do_add)
+            if change_add:
+                print("___RESULT___")
+                print(code_line)
 
         if do_add:
             if change_add:
@@ -339,9 +352,6 @@ def fstringify_code_by_line(code, debug=False):
 
             use_indented = trim_list_until(use_indented, len(code_line_parts))
 
-            if debug:
-                print(">>>>>>>>>>>>>>>>>>>>>", code_line_parts)
-
             if change_add:
                 for k, v in comments.items():
                     if debug:
@@ -350,14 +360,27 @@ def fstringify_code_by_line(code, debug=False):
                         code_line_parts.insert(k, v)
                         use_indented.insert(k, get_indent(v))
 
+            indie = ""
             for idx, cline in enumerate(code_line_parts):
-                if debug:
-                    print(
-                        "\t\ttab amount", len(use_indented[idx]), "line", cline.lstrip()
-                    )
                 indent = use_indented[idx] if change_add else ""
                 code = cline.lstrip() if change_add else cline
-                result.append(indent + code)
+                if idx == 0:
+                    indie = indent + code
+                else:
+                    indie += cline.strip()
+
+                if not change_add:
+                    result.append(indent + code)
+
+            if change_add:
+                result.append(indie)
+
+            if debug:
+                print("___INSERTED___")
+                if not change_add:
+                    print("\n".join(result[: len(code_line_parts) * -1]))
+                else:
+                    print(indie)
 
             change_add = False
             comments = {}
