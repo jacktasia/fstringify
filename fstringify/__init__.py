@@ -285,6 +285,9 @@ def trim_list(l):
 
 
 def trim_list_until(l, length):
+    if len(l) > 1 and length == 1:
+        return [l[0]]
+
     while len(l) > length:
         l = trim_list(l)
 
@@ -302,16 +305,33 @@ def fstringify_code_by_line(code, debug=False):
     use_indented = []
     do_add = False
     change_add = False
-
+    in_doc_string = False
+    last_line_strip = ""
     raw_code_lines = code.split("\n")
 
     for line_idx, raw_line in enumerate(raw_code_lines):
         lineno = line_idx + 1
         indented = get_indent(raw_line)
+        raw_line_strip = raw_line.strip()
+
+        # if not in_doc_string and last_line_strip.startswith("def "):
+        #     in_doc_string = raw_line_strip.startswith(
+        #         '"""'
+        #     ) or raw_line_strip.startswith("'''")
+        #     result.append(raw_line)
+        #     continue
+
+        # if in_doc_string:
+        #     result.append(raw_line)
+        #     if raw_line_strip.endswith("'''") or raw_line_strip.endswith('"""'):
+        #         in_doc_string = False
+
+        #     continue
+
         scope.append(raw_line.strip())
         raw_scope.append(raw_line)
 
-        if raw_line.strip().startswith("#"):
+        if raw_line_strip.startswith("#"):
             comments[len(scope) - 1] = raw_line
         else:
             use_indented.append(indented)
@@ -356,7 +376,9 @@ def fstringify_code_by_line(code, debug=False):
                 for k, v in comments.items():
                     if debug:
                         print("k", k, type(k), "v", v, "comments", comments)
-                    if code_line_parts[k] != v:
+
+                    # in case the comments are contained within a bin op
+                    if k >= len(code_line_parts) or code_line_parts[k] != v:
                         code_line_parts.insert(k, v)
                         use_indented.insert(k, get_indent(v))
 
@@ -367,6 +389,8 @@ def fstringify_code_by_line(code, debug=False):
                 if idx == 0:
                     indie = indent + code
                 else:
+                    if indie.endswith(",") or indie.endswith("else"):
+                        indie += " "
                     indie += cline.strip()
 
                 if not change_add:
@@ -388,6 +412,7 @@ def fstringify_code_by_line(code, debug=False):
             raw_scope = []
             use_indented = []
             do_add = False
+        last_line_strip = raw_line_strip
 
     return "\n".join(result)
 

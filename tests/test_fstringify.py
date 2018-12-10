@@ -225,7 +225,7 @@ def cmd_test():
 
         result = fstringify_code_by_line(code, debug=True)
         # TODO:
-        # self.assertCodeEqual(result, expected)
+        self.assertCodeEqual(result, expected)
 
 
 if __name__ == "__main__":
