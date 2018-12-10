@@ -180,7 +180,7 @@ def handle_from_mod(node):
         return handle_from_mod_tuple(node)
 
     elif isinstance(node.right, ast.Dict):
-        print("~~~~ Dict mod strings don't make sense to f-strings")
+        # print("~~~~ Dict mod strings don't make sense to f-strings")
         return node
 
     raise RuntimeError("unexpected `node.right` class")
@@ -314,19 +314,21 @@ def fstringify_code_by_line(code, debug=False):
         indented = get_indent(raw_line)
         raw_line_strip = raw_line.strip()
 
-        # if not in_doc_string and last_line_strip.startswith("def "):
-        #     in_doc_string = raw_line_strip.startswith(
-        #         '"""'
-        #     ) or raw_line_strip.startswith("'''")
-        #     result.append(raw_line)
-        #     continue
+        if not in_doc_string and last_line_strip.startswith("def "):
+            in_doc_string = raw_line_strip.startswith(
+                '"""'
+            ) or raw_line_strip.startswith("'''")
+            if in_doc_string:
+                result.append(raw_line)
+                last_line_strip = raw_line
+                continue
 
-        # if in_doc_string:
-        #     result.append(raw_line)
-        #     if raw_line_strip.endswith("'''") or raw_line_strip.endswith('"""'):
-        #         in_doc_string = False
-
-        #     continue
+        elif in_doc_string:
+            result.append(raw_line)
+            if raw_line_strip.endswith("'''") or raw_line_strip.endswith('"""'):
+                in_doc_string = False
+            last_line_strip = raw_line
+            continue
 
         scope.append(raw_line.strip())
         raw_scope.append(raw_line)
@@ -346,6 +348,8 @@ def fstringify_code_by_line(code, debug=False):
             do_add = True
         elif meta["skip"]:
             do_add = True
+        elif line_idx == len(raw_code_lines) - 1:
+            do_add
 
         if debug:
             print(
@@ -419,11 +423,21 @@ def fstringify_code_by_line(code, debug=False):
 
 def fstringify_file(fn):
     with open(fn) as f:
-        new_code = fstringify_code_by_line(f.read())
+        contents = f.read()
+
+    if "%" not in contents:
+        return False
+
+    new_code = fstringify_code_by_line(contents)
+
+    if new_code == contents:
+        return False
 
     # with open(fn + ".fs", "w") as f:
     with open(fn, "w") as f:
         f.write(new_code)
+
+    return True
 
 
 def fstringify_dir(in_dir):
