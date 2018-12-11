@@ -280,6 +280,40 @@ def load_handler(path, *args, **kwargs):
         result = fstringify_code_by_line(code, debug=False)
         self.assertCodeEqual(result, code)
 
+    def test_django_noop5(self):
+        code = """
+        print("this is new line: %s" % "\\\\")
+"""
+
+        result = fstringify_code_by_line(code, debug=False)
+        self.assertCodeEqual(result, code)
+
+    def test_django_noop6(self):
+        code = """
+        if invalid_params:
+            raise exceptions.FieldError(
+                "Invalid field name(s) for model %s: '%s'." % (
+                    self.model._meta.object_name,
+                    "', '".join(sorted(invalid_params)),
+                ))
+"""
+
+        result = fstringify_code_by_line(code, debug=False)
+        self.assertCodeEqual(result, code)
+
+    def test_django_noop7(self):
+        code = """
+        # to be join-less and smaller. Refs #21760.
+        if remote_field.is_hidden() or len(self.field.foreign_related_fields) == 1:
+            query = {'%s__in' % related_field.name: {instance_attr(inst)[0] for inst in instances}}
+        else:
+            query = {'%s__in' % self.field.related_query_name(): instances}
+        queryset = queryset.filter(**query)
+"""
+
+        result = fstringify_code_by_line(code, debug=False)
+        self.assertCodeEqual(result, code)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,11 +1,13 @@
 __version__ = "0.1.0"
 
 import ast
+import io
 import json
 import pprint
 import re
 import os
 import sys
+import tokenize
 
 import astor
 
@@ -213,15 +215,21 @@ class FstringifyTransformer(ast.NodeTransformer):
         )
 
         # bail in these edge cases...
-        for ch in ast.walk(node.right):
-            # no nested binops!
-            if isinstance(ch, ast.BinOp):
-                return node
-            # f-string expression part cannot include a backslash
-            if isinstance(ch, ast.Str) and any(
-                map(lambda x: x in ch.s, ("\n", "\t", "\r"))
-            ):
-                return node
+        if do_change:
+            no_good = ["}", "{"]
+            for ng in no_good:
+                if ng in node.left.s:
+                    return node
+            for ch in ast.walk(node.right):
+                # no nested binops!
+                if isinstance(ch, ast.BinOp):
+                    return node
+                # f-string expression part cannot include a backslash
+                elif isinstance(ch, ast.Str) and (
+                    any(map(lambda x: x in ch.s, ("\n", "\t", "\r", "'", '"')))
+                    or "\\" in ch.s
+                ):
+                    return node
 
         if do_change:
             self.counter += 1
@@ -264,7 +272,9 @@ def fstringify_code(code, include_meta=False, debug=False):
         #     pp_ast(tree)
         converted, meta = fstringify_node(tree)
     except SyntaxError as e:
-        meta["skip"] = code.rstrip().endswith(":")
+        meta["skip"] = code.rstrip().endswith(
+            ":"
+        ) or "cannot include a blackslash" in str(e)
     except Exception as e2:
         meta["skip"] = False
 
@@ -348,9 +358,27 @@ def fstringify_code_by_line(code, debug=False):
         else:
             use_indented.append(indented)
 
-        code_line, meta = fstringify_code(
-            "\n".join(scope), include_meta=True, debug=debug
-        )
+        ###
+
+        punt = False
+        try:
+            g = tokenize.tokenize(io.BytesIO(raw_line.encode("utf-8")).readline)
+            found_bin_op = False
+            for toknum, tokval, _, _, _ in g:
+                # print(toknum, tokval)
+                if toknum == 53 and tokval == "%":
+                    found_bin_op = True
+                elif found_bin_op and toknum == 53 and tokval == ":":
+                    punt = True
+        except tokenize.TokenError:
+            pass
+
+        if not punt:
+            code_line, meta = fstringify_code(
+                "\n".join(scope), include_meta=True, debug=debug
+            )
+        else:
+            meta = dict(changed=False, skip=True)
 
         if meta["changed"]:
             code_line = force_double_quote_fstring(code_line)
@@ -403,7 +431,12 @@ def fstringify_code_by_line(code, debug=False):
                 if idx == 0:
                     indie = indent + code
                 else:
-                    if indie.endswith(",") or indie.endswith("else"):
+                    if (
+                        indie.endswith(",")
+                        or indie.endswith("else")
+                        or indie.endswith("for")
+                        or indie.endswith("in")
+                    ):
                         indie += " "
                     indie += cline.strip()
 

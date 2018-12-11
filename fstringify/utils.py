@@ -20,7 +20,7 @@ def force_double_quote_fstring(code):
 
     org = result[0]
 
-    if '"' in org:
+    if '"' in org or "\\" in org:
         return code
 
     leaf = Leaf(org)
