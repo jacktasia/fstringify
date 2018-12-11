@@ -311,7 +311,8 @@ def load_handler(path, *args, **kwargs):
         queryset = queryset.filter(**query)
 """
 
-        result = fstringify_code_by_line(code, debug=False)
+        result = fstringify_code_by_line(code, debug=False, stats=True)
+        # self.assertEqual(meta["changes"], 0)
         self.assertCodeEqual(result, code)
 
 

@@ -226,7 +226,7 @@ class FstringifyTransformer(ast.NodeTransformer):
                     return node
                 # f-string expression part cannot include a backslash
                 elif isinstance(ch, ast.Str) and (
-                    any(map(lambda x: x in ch.s, ("\n", "\t", "\r", "'", '"')))
+                    any(map(lambda x: x in ch.s, ("\n", "\t", "\r", "'", '"', "%s")))
                     or "\\" in ch.s
                 ):
                     return node
@@ -317,7 +317,25 @@ def trim_list_until(l, length):
     return l
 
 
-def fstringify_code_by_line(code, debug=False):
+def skip_line(raw_line):
+    punt = False
+    try:
+        g = tokenize.tokenize(io.BytesIO(raw_line.encode("utf-8")).readline)
+        found_bin_op = False
+        for toknum, tokval, _, _, _ in g:
+            # print(toknum, tokval)
+            if toknum == 53 and tokval == "%":
+                found_bin_op = True
+            elif found_bin_op and toknum == 53 and tokval == ":":
+                punt = True
+    except tokenize.TokenError:
+        pass
+
+    return punt
+
+
+def fstringify_code_by_line(code, stats=False, debug=False):
+    change_count = 0
     result = []
     scope = []
     raw_scope = []
@@ -360,18 +378,7 @@ def fstringify_code_by_line(code, debug=False):
 
         ###
 
-        punt = False
-        try:
-            g = tokenize.tokenize(io.BytesIO(raw_line.encode("utf-8")).readline)
-            found_bin_op = False
-            for toknum, tokval, _, _, _ in g:
-                # print(toknum, tokval)
-                if toknum == 53 and tokval == "%":
-                    found_bin_op = True
-                elif found_bin_op and toknum == 53 and tokval == ":":
-                    punt = True
-        except tokenize.TokenError:
-            pass
+        punt = skip_line(raw_line)
 
         if not punt:
             code_line, meta = fstringify_code(
@@ -384,6 +391,7 @@ def fstringify_code_by_line(code, debug=False):
             code_line = force_double_quote_fstring(code_line)
             change_add = True
             do_add = True
+            change_count += 1
         elif meta["skip"]:
             do_add = True
         elif line_idx == len(raw_code_lines) - 1:
@@ -461,15 +469,35 @@ def fstringify_code_by_line(code, debug=False):
             do_add = False
         last_line_strip = raw_line_strip
 
-    return "\n".join(result)
+    final_code = "\n".join(result)
+    return final_code
+    # result_stats = dict(changes=change_count)
+    # return final_code, result_stats if stats else final_code
+
+
+def skip_file(fn):
+    """use tokenizer to make a fancier
+        `"s%" not in contents`
+    """
+    # fn = io.BytesIO(fn.encode("utf-8")).readline
+    with open(fn, "rb") as f:
+        try:
+            g = tokenize.tokenize(f.readline)
+            for toknum, tokval, _, _, _ in g:
+                if toknum == 53 and tokval == "%":
+                    return False
+        except tokenize.TokenError:
+            pass
+
+        return True
 
 
 def fstringify_file(fn):
+    if skip_file(fn):
+        return False
+
     with open(fn) as f:
         contents = f.read()
-
-    if "%" not in contents:
-        return False
 
     new_code = fstringify_code_by_line(contents)
 
