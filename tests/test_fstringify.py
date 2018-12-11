@@ -244,6 +244,42 @@ def load_handler(path, *args, **kwargs):
         result = fstringify_code_by_line(code, debug=False)
         self.assertCodeEqual(result, code)
 
+    def test_django_noop2(self):
+        code = """
+    def invalid_block_tag(self, token, command, parse_until=None):
+        if parse_until:
+            raise self.error(
+                token,
+                "Invalid block tag on line %d: '%s', expected %s. Did you "
+                "forget to register or load this tag?" % (
+                    token.lineno,
+                    command,
+                    get_text_list(["'%s'" % p for p in parse_until], 'or'),
+                ),
+            )
+"""
+        result = fstringify_code_by_line(code, debug=False)
+        self.assertCodeEqual(result, code)
+
+    def test_django_noop3(self):
+        code = """
+    def __str__(self):
+        token_name = self.token_type.name.capitalize()
+        return ('<%s token: "%s...">' %
+                (token_name, self.contents[:20].replace('\\n', '')))
+"""
+
+        result = fstringify_code_by_line(code, debug=False)
+        self.assertCodeEqual(result, code)
+
+    def test_django_noop4(self):
+        code = """
+        print("this is new line: %s" % "\\n")
+"""
+
+        result = fstringify_code_by_line(code, debug=False)
+        self.assertCodeEqual(result, code)
+
 
 if __name__ == "__main__":
     unittest.main()

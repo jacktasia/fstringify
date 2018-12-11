@@ -14,6 +14,7 @@ def force_double_quote_fstring(code):
     """Use black's `normalize_string`_quotes`"""
 
     result = re.findall("\\b(f'[^']+')", code)
+
     if not result:
         return code
 

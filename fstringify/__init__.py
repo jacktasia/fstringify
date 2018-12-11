@@ -1,7 +1,6 @@
 __version__ = "0.1.0"
 
 import ast
-
 import json
 import pprint
 import re
@@ -120,6 +119,7 @@ def handle_from_mod_tuple(node):
 
     Returns ast.JoinedStr (f-string)
     """
+
     format_str = node.left.s
     var_pattern = "(%[a-z])"  # TODO: compile
     matches = re.findall(var_pattern, format_str)
@@ -208,10 +208,20 @@ class FstringifyTransformer(ast.NodeTransformer):
         do_change = (
             isinstance(node.left, ast.Str)
             and isinstance(node.op, ast.Mod)
-            and isinstance(
-                node.right, (ast.Tuple, ast.Name, ast.Dict, ast.Attribute, ast.Str)
-            )
+            and isinstance(node.right, (ast.Tuple, ast.Name, ast.Attribute, ast.Str))
+            # ignore ast.Dict on right
         )
+
+        # bail in these edge cases...
+        for ch in ast.walk(node.right):
+            # no nested binops!
+            if isinstance(ch, ast.BinOp):
+                return node
+            # f-string expression part cannot include a backslash
+            if isinstance(ch, ast.Str) and any(
+                map(lambda x: x in ch.s, ("\n", "\t", "\r"))
+            ):
+                return node
 
         if do_change:
             self.counter += 1
