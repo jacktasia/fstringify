@@ -2,9 +2,12 @@ import difflib
 import os
 import json
 import unittest
-
+import tokenize
 
 from fstringify import (
+    usable_chunk,
+    dump_tokenize,
+    get_chunk,
     __version__,
     main,
     fstringify_code,
@@ -34,6 +37,26 @@ class FstringifyTest(unittest.TestCase):
             print("-------------------------------")
 
         self.assertTrue(result == expected)
+
+    @staticmethod
+    def tokenize_debug(code):
+        print(code)
+        print("---------------------------")
+        print(dump_tokenize(code))
+        print("---------------------------")
+        for x in get_chunk(code):
+            if x:
+                # print(x)
+                result = tokenize.untokenize(x)
+
+                if isinstance(result, bytes):
+                    result = result.decode("utf-8").rstrip()
+                else:
+                    result = result.lstrip("\n\\")
+
+                print(result)
+                print("~~~~~~~~~~~~~!!!!!!!!!!!!!!", usable_chunk(result))
+            # print("---------------------------")
 
     def test_version(self):
         self.assertEqual(__version__, "0.1.0")
@@ -88,6 +111,8 @@ class Blah:
             "numbers: %s" % (self.num)
         )
     """
+
+        self.tokenize_debug(code)
         expected = """
 class Blah:
 

@@ -7,6 +7,7 @@ import pprint
 import re
 import os
 import sys
+import token
 import tokenize
 
 import astor
@@ -332,6 +333,50 @@ def skip_line(raw_line):
         pass
 
     return punt
+
+
+def usable_chunk(fn):
+    """use tokenizer to make a fancier
+        `"s%" not in contents`
+    """
+    f = io.BytesIO(fn.encode("utf-8"))
+
+    try:
+        g = tokenize.tokenize(f.readline)
+        for toknum, tokval, _, _, _ in g:
+            if toknum == 53 and tokval == "%":
+                return True
+    except tokenize.TokenError:
+        pass
+
+    return False
+
+
+def get_chunk(code):
+    g = tokenize.tokenize(io.BytesIO(code.encode("utf-8")).readline)
+    in_chunk = False
+    chunk = []
+    for item in g:
+        toknum, tokval, start, end, content = item
+
+        tok_type = token.tok_name[toknum]
+        if toknum == token.DEDENT:
+            if chunk:
+                chunk.append(item)
+                yield chunk
+                chunk = []
+        else:
+            chunk.append(item)
+
+
+def dump_tokenize(code):
+    try:
+        g = tokenize.tokenize(io.BytesIO(code.encode("utf-8")).readline)
+        for toknum, tokval, start, end, line in g:
+            print(start, toknum, token.tok_name[toknum], tokval)
+
+    except tokenize.TokenError:
+        pass
 
 
 def fstringify_code_by_line(code, stats=False, debug=False):
