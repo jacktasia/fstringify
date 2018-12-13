@@ -372,6 +372,24 @@ def get_chunk(code):
             chunk.append(item)
 
 
+def get_str_bin_op_lines(code):
+    for chunk in get_chunk(code):
+        start = chunk[0][2][0]  # first line -> 2 idx is start -> is line
+        end = chunk[-1][3][0]  # last line -> 3 idx is end -> is line
+
+        found = False
+        for toknum, tokval, _, _, _ in chunk:
+            if toknum == 53 and tokval == "%":
+                found = True
+            # punt if this happens
+            elif found and toknum == 53 and tokval == ":":
+                found = False  # punt on this (see django_noop7 test)
+                break
+
+        if found:
+            yield (start, end)
+
+
 def dump_tokenize(code):
     try:
         g = tokenize.tokenize(io.BytesIO(code.encode("utf-8")).readline)
@@ -383,6 +401,77 @@ def dump_tokenize(code):
 
 
 def fstringify_code_by_line(code, stats=False, debug=False):
+    raw_code_lines = code.split("\n")
+    no_skip_range = []
+    scopes_by_idx = {}
+    for positions in get_str_bin_op_lines(code):
+        # for start, end in positions:
+        if not positions:
+            continue
+        start, end = positions
+        start_idx = start - 1
+        raw_scope = raw_code_lines[start_idx:end]
+        if not raw_scope:
+            continue
+
+        strip_scope = map(lambda x: x.strip(), raw_scope)
+        scopes_by_idx[start_idx] = dict(
+            raw_scope=raw_scope,
+            strip_scope=strip_scope,
+            indent=get_indent(raw_scope[0]),
+        )
+        no_skip_range += list(range(start_idx, end))
+
+    result_lines = []
+    for line_idx, raw_line in enumerate(raw_code_lines):
+        lineno = line_idx + 1
+        indented = get_indent(raw_line)
+
+        if line_idx not in no_skip_range:
+            result_lines.append(raw_line)
+            continue
+
+        if line_idx not in scopes_by_idx:
+            continue
+
+        scoped = scopes_by_idx[line_idx]
+        code_line, meta = fstringify_code(
+            "\n".join(scoped["strip_scope"]), include_meta=True, debug=debug
+        )
+
+        if not meta["changed"]:
+            result_lines += scoped["raw_scope"]
+            continue
+
+        code_line = force_double_quote_fstring(code_line)
+        code_line_parts = code_line.strip().split("\n")
+
+        indie = ""
+        indent = scoped["indent"]
+        for idx, cline in enumerate(code_line_parts):
+            code_line_strip = cline.lstrip()  # if change_add else cline
+            if idx == 0:
+                indie = indent + code_line_strip
+            else:
+                if (
+                    indie.endswith(",")
+                    or indie.endswith("else")
+                    or indie.endswith("for")
+                    or indie.endswith("in")
+                ):
+                    indie += " "
+
+                indie += cline.strip()
+                # else:
+                #     indie += cline.strip()
+
+        result_lines.append(indie)
+
+    final_code = "\n".join(result_lines)
+    return final_code
+
+
+def fstringify_code_by_line2(code, stats=False, debug=False):
     change_count = 0
     result = []
     scope = []

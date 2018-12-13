@@ -5,6 +5,8 @@ import unittest
 import tokenize
 
 from fstringify import (
+    fstringify_code_by_line2,
+    get_str_bin_op_lines,
     usable_chunk,
     dump_tokenize,
     get_chunk,
@@ -40,23 +42,30 @@ class FstringifyTest(unittest.TestCase):
 
     @staticmethod
     def tokenize_debug(code):
-        print(code)
-        print("---------------------------")
-        print(dump_tokenize(code))
-        print("---------------------------")
-        for x in get_chunk(code):
-            if x:
-                # print(x)
-                result = tokenize.untokenize(x)
+        pass
+        # print(code)
+        # print("---------------------------")
+        # print(dump_tokenize(code))
+        # print("---------------------------")
 
-                if isinstance(result, bytes):
-                    result = result.decode("utf-8").rstrip()
-                else:
-                    result = result.lstrip("\n\\")
+        # print(fstringify_code_by_line2(code))
 
-                print(result)
-                print("~~~~~~~~~~~~~!!!!!!!!!!!!!!", usable_chunk(result))
-            # print("---------------------------")
+        ###############
+        # for x in get_str_bin_op_lines(code):
+        #     print(x)
+        # for x in get_chunk(code):
+        #     if x:
+        #         # print(x)
+        #         result = tokenize.untokenize(x)
+
+        #         if isinstance(result, bytes):
+        #             result = result.decode("utf-8").rstrip()
+        #         else:
+        #             result = result.lstrip("\n\\")
+
+        #         print(result)
+        #         print("~~~~~~~~~~~~~!!!!!!!!!!!!!!", usable_chunk(result))
+        # print("---------------------------")
 
     def test_version(self):
         self.assertEqual(__version__, "0.1.0")
