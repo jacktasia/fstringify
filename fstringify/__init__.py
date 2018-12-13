@@ -354,18 +354,21 @@ def usable_chunk(fn):
 
 def get_chunk(code):
     g = tokenize.tokenize(io.BytesIO(code.encode("utf-8")).readline)
-    in_chunk = False
     chunk = []
+    END_CHECK = 58  # token.N_TOKENS in 3.7
     for item in g:
         toknum, tokval, start, end, content = item
 
         tok_type = token.tok_name[toknum]
-        if toknum == token.DEDENT:
+        if toknum in (token.NEWLINE, token.DEDENT):
             if chunk:
                 chunk.append(item)
                 yield chunk
                 chunk = []
         else:
+            if not chunk and toknum == END_CHECK:  # token.N_TOKENS in 3.7
+                continue
+
             chunk.append(item)
 
 
