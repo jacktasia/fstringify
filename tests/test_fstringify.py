@@ -4,22 +4,11 @@ import json
 import unittest
 import tokenize
 
-from fstringify import (
-    fstringify_code_by_line2,
-    get_str_bin_op_lines,
-    usable_chunk,
-    dump_tokenize,
-    get_chunk,
-    __version__,
-    main,
-    fstringify_code,
-    pp_code_ast,
-    fstringify_file,
-    fstringify_code_by_line,
-    get_indent,
-)
+from fstringify import fstringify_code, fstringify_file, fstringify_code_by_line
 
-from fstringify.utils import force_double_quote_fstring
+from fstringify.utils import get_indent
+from fstringify.format import force_double_quote_fstring
+
 
 # TODO: optional argument to inject comments of when found but can't apply
 
@@ -67,9 +56,6 @@ class FstringifyTest(unittest.TestCase):
         #         print("~~~~~~~~~~~~~!!!!!!!!!!!!!!", usable_chunk(result))
         # print("---------------------------")
 
-    def test_version(self):
-        self.assertEqual(__version__, "0.1.0")
-
     def test_mod_dict_name(self):
         code = """
         d = {"k": "blah"}
@@ -79,7 +65,7 @@ class FstringifyTest(unittest.TestCase):
         d = {"k": "blah"}
         b = f"1+{d['k']}"
         """
-        result = fstringify_code_by_line(code)
+        result = fstringify_code_by_line(code, debug=True)
         self.assertCodeEqual(result, expected)
 
     def test_mod_var_name(self):
@@ -121,7 +107,7 @@ class Blah:
         )
     """
 
-        self.tokenize_debug(code)
+        # self.tokenize_debug(code)
         expected = """
 class Blah:
 
