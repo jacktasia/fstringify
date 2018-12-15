@@ -3,6 +3,16 @@
 test:
 	@bash -c "PYTHONPATH=. poetry run python tests/test_fstringify.py"
 
+deploy: autoformat lint test
+	pip install twine wheel
+	git tag $$(python setup.py -V)
+	git push --tags
+	python setup.py bdist_wheel
+	python setup.py sdist
+	echo 'pypi.org Username: '
+	@read username && twine upload dist/* -u $$username;
+
+
 run:
 	#@bash -c "PYTHONPATH=. poetry run python fstringify/__init__.py ../haizhongwen"
 	#@bash -c "PYTHONPATH=. poetry run python fstringify/__init__.py ../flask"
