@@ -11,7 +11,8 @@ test:
 citest:
 	@bash -c "PYTHONPATH=. python tests/test_fstringify.py"
 
-deploy: pip install twine wheel
+deploy:
+	pip install twine wheel
 	git tag $$(python setup.py -V)
 	git push --tags
 	python setup.py bdist_wheel
