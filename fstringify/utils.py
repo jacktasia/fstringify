@@ -1,14 +1,55 @@
 import ast
+import io
 import json
 import re
+import token
+import tokenize
+
 
 MOD_KEY_PATTERN = re.compile("(%\([^)]+\)s)")
 MOD_KEY_NAME_PATTERN = re.compile("%\(([^)]+)\)s")
 INDENT_PATTERN = re.compile("^(\ +)")
-VAR_KEY_PATTERN = re.compile("(%[a-z])")
+# VAR_KEY_PATTERN = re.compile("(%[a-z])")
+VAR_KEY_PATTERN = re.compile("(%[sd])")
+
+from fstringify.transform import fstringify_node
 
 
-def pp_code_ast(code):
+def dump_tokenize(code):
+    try:
+        g = tokenize.tokenize(io.BytesIO(code.encode("utf-8")).readline)
+        for toknum, tokval, start, end, line in g:
+            print(start, toknum, token.tok_name[toknum], tokval)
+
+    except tokenize.TokenError:
+        pass
+
+
+def get_lines(code):
+
+    lines = []
+    last_line = None
+    last_lineno = -1
+    try:
+        g = tokenize.tokenize(io.BytesIO(code.encode("utf-8")).readline)
+        for toknum, tokval, start, end, line in g:
+            # print(start, toknum, token.tok_name[toknum], tokval)
+
+            lineno = start[0]
+
+            if line != last_line and lineno != last_line and line:
+                lines.append(line.rstrip())
+
+            last_line = line
+            last_lineno = lineno
+
+    except tokenize.TokenError:
+        pass
+
+    return lines
+
+
+def pp_code_ast(code, convert=False):
     """Pretty print code's AST to stdout.
 
     Args:
@@ -17,8 +58,9 @@ def pp_code_ast(code):
     Returns nothing print AST representation to stdout
     """
     tree = ast.parse(code)
-    converted, _ = fstringify_node(tree)
-    pp_ast(converted)
+    if convert:
+        tree, _ = fstringify_node(tree)
+    pp_ast(tree)
 
 
 def ast_to_dict(node):

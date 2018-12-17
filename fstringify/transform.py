@@ -3,12 +3,7 @@ import re
 
 import astor
 
-from fstringify.utils import (
-    MOD_KEY_PATTERN,
-    MOD_KEY_NAME_PATTERN,
-    VAR_KEY_PATTERN,
-    pp_ast,
-)
+from fstringify.utils import MOD_KEY_PATTERN, MOD_KEY_NAME_PATTERN, VAR_KEY_PATTERN
 
 
 def handle_from_mod_dict_name(node):
@@ -171,7 +166,12 @@ class FstringifyTransformer(ast.NodeTransformer):
                     return node
                 # f-string expression part cannot include a backslash
                 elif isinstance(ch, ast.Str) and (
-                    any(map(lambda x: x in ch.s, ("\n", "\t", "\r", "'", '"', "%s")))
+                    any(
+                        map(
+                            lambda x: x in ch.s,
+                            ("\n", "\t", "\r", "'", '"', "%s", "%%"),
+                        )
+                    )
                     or "\\" in ch.s
                 ):
                     return node

@@ -2,7 +2,7 @@ import io
 import token
 import tokenize
 
-from fstringify.utils import get_indent
+from fstringify.utils import get_indent, get_lines
 from fstringify.transform import fstringify_code
 from fstringify.format import force_double_quote_fstring
 
@@ -12,12 +12,17 @@ def skip_line(raw_line):
     try:
         g = tokenize.tokenize(io.BytesIO(raw_line.encode("utf-8")).readline)
         found_bin_op = False
+        found_paren = False
         for toknum, tokval, _, _, _ in g:
             # print(toknum, tokval)
             if toknum == 53 and tokval == "%":
                 found_bin_op = True
-            elif found_bin_op and toknum == 53 and tokval == ":":
+            elif found_bin_op and toknum == 53 and tokval == "(":
+                found_paren = True
+            elif found_bin_op and not found_paren and toknum == 1 and tokval == "if":
                 punt = True
+            elif found_bin_op and toknum == 53 and tokval == ":":
+                punt = False
     except tokenize.TokenError:
         pass
 
@@ -32,9 +37,19 @@ def usable_chunk(fn):
 
     try:
         g = tokenize.tokenize(f.readline)
+        last_toknum = None
+        last_tokval = None
         for toknum, tokval, _, _, _ in g:
-            if toknum == 53 and tokval == "%":
+            if (
+                toknum == 53
+                and tokval == "%"
+                and last_toknum == 3
+                and "\\n" not in last_tokval
+            ):
                 return True
+
+            last_toknum = toknum
+            last_tokval = tokval
     except tokenize.TokenError:
         pass
 
@@ -66,27 +81,30 @@ def get_str_bin_op_lines(code):
         start = chunk[0][2][0]  # first line -> 2 idx is start -> is line
         end = chunk[-1][3][0]  # last line -> 3 idx is end -> is line
 
+        last_toknum = None
+        last_tokval = None
         found = False
         for toknum, tokval, _, _, _ in chunk:
-            if toknum == 53 and tokval == "%":
+            if (
+                toknum == 53
+                and tokval == "%"
+                and last_toknum == 3
+                and "\\n" not in last_tokval
+                and "\n" not in last_tokval
+                and "%%" not in last_tokval
+            ):
                 found = True
             # punt if this happens
             elif found and toknum == 53 and tokval == ":":
                 found = False  # punt on this (see django_noop7 test)
                 break
 
+            if not (toknum == 58 and tokval == "\n"):
+                last_toknum = toknum
+                last_tokval = tokval
+
         if found:
             yield (start, end)
-
-
-def dump_tokenize(code):
-    try:
-        g = tokenize.tokenize(io.BytesIO(code.encode("utf-8")).readline)
-        for toknum, tokval, start, end, line in g:
-            print(start, toknum, token.tok_name[toknum], tokval)
-
-    except tokenize.TokenError:
-        pass
 
 
 def fstringify_code_by_line(code, stats=False, debug=False):

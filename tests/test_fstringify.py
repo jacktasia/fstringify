@@ -6,7 +6,7 @@ import tokenize
 
 from fstringify import fstringify_code, fstringify_file, fstringify_code_by_line
 
-from fstringify.utils import get_indent
+from fstringify.utils import get_indent, pp_code_ast
 from fstringify.format import force_double_quote_fstring
 
 
@@ -333,6 +333,33 @@ def load_handler(path, *args, **kwargs):
 
         result = fstringify_code_by_line(code, debug=False, stats=True)
         # self.assertEqual(meta["changes"], 0)
+        self.assertCodeEqual(result, code)
+
+    def test_django_noop8(self):
+        code = """
+    hint = "\n\tHINT: %s" % self.hint if self.hint else ''
+"""
+
+        result = fstringify_code_by_line(code, debug=False, stats=True)
+
+        self.assertCodeEqual(result, code)
+
+    def test_django_noop9(self):
+        code = """
+    hint = "HINT: %s" % self.hint if self.hint else ''
+"""
+
+        result = fstringify_code_by_line(code, debug=False, stats=True)
+
+        self.assertCodeEqual(result, code)
+
+    def test_django_op_10(self):
+        code = """
+hint = "HINT: %s" % (self.hint if self.hint else '')
+"""
+        # pp_code_ast(code)
+        result = fstringify_code_by_line(code, debug=False, stats=True)
+
         self.assertCodeEqual(result, code)
 
 

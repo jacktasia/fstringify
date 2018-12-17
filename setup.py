@@ -30,7 +30,7 @@ def get_version():
 
 def get_requirements():
     with open("requirements.txt") as fp:
-        install_requires = fp.read()
+        return fp.read()
 
 
 VERSION = get_version()

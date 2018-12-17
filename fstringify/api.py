@@ -58,7 +58,7 @@ def fstringify(file_or_path, verbose=False, quiet=False):
         sys.exit(1)
 
     if os.path.isdir(to_use):
-        files = astor.code_to_ast.find_py_files(in_dir)
+        files = astor.code_to_ast.find_py_files(to_use)
     else:
         files = ((os.path.dirname(to_use), os.path.basename(to_use)),)
 
