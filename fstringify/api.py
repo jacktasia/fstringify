@@ -30,7 +30,7 @@ def fstringify_dir(in_dir):
     return fstringify_files(files)
 
 
-def fstringify_files(files):
+def fstringify_files(files, verbose=False, quiet=False):
     change_count = 0
     start_time = time.time()
     for f in files:
@@ -40,22 +40,26 @@ def fstringify_files(files):
             change_count += 1
         status = "yes" if changed else "no"
         # TODO: only if `verbose` is set
-        print(f"fstringifying {file_path}...{status}")
+
+        if verbose and not quiet:
+            print(f"fstringifying {file_path}...{status}")
 
     total_time = round(time.time() - start_time, 3)
 
-    # TODO: not if `quiet` is set
-    file_s = "s" if change_count != 1 else ""
-    print(f"\nfstringified {change_count} file{file_s} in {total_time}s")
+    if not quiet:
+        file_s = "s" if change_count != 1 else ""
+        print(f"\nfstringified {change_count} file{file_s} in {total_time}s")
 
 
-def fstringify(file_or_path):
+def fstringify(file_or_path, verbose=False, quiet=False):
     to_use = os.path.abspath(file_or_path)
     if not os.path.exists(to_use):
         print(f"`{file_or_path}` not found")
         sys.exit(1)
 
     if os.path.isdir(to_use):
-        fstringify_dir(to_use)
+        files = astor.code_to_ast.find_py_files(in_dir)
     else:
-        fstringify_files(((os.path.dirname(to_use), os.path.basename(to_use)),))
+        files = ((os.path.dirname(to_use), os.path.basename(to_use)),)
+
+    fstringify_files(files, verbose=verbose, quiet=quiet)
