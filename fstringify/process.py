@@ -99,7 +99,7 @@ def get_str_bin_op_lines(code):
                 found = False  # punt on this (see django_noop7 test)
                 break
 
-            if not (toknum == 58 and tokval == "\n"):
+            if not (toknum in (56, 58) and tokval == "\n"):  # 3.7 is 56...
                 last_toknum = toknum
                 last_tokval = tokval
 
