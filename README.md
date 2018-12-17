@@ -6,10 +6,12 @@
 
 `fstringify` is a command line tool to automatically convert a project's Python code from old "%-formatted" strings into Python 3.6+'s "f-strings".
 
+Here's a [complete diff running it against flask](https://github.com/pallets/flask/compare/master...jacktasia:fstringified).
+
 
 ### About
 
-I mainly wanted an excuse to play with the built-in [AST](https://docs.python.org/3/library/tokenize.html) and [tokenze](https://docs.python.org/3/library/tokenize.html) modules. That said, f-strings are really cool to quote Joanna Jablonski's great [f-string guide](https://realpython.com/python-f-strings/):
+I mainly wanted an excuse to play with the built-in [AST](https://docs.python.org/3/library/tokenize.html) and [tokenze](https://docs.python.org/3/library/tokenize.html) modules. That said, f-strings are really cool. To quote Joanna Jablonski's great [f-string guide](https://realpython.com/python-f-strings/):
 
 > Not only are they more readable, more concise, and less prone to error than other ways of formatting, but they are also faster!
 
