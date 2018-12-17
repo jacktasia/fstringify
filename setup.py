@@ -41,7 +41,7 @@ setup(
     version=VERSION,
     description="CLI tool to convert a python project's %-formatted strings to f-strings.",
     author="Jack Angers",
-    author_email="jacktasia@gmail.",
+    author_email="jacktasia@gmail.com",
     url="https://github.com/jacktasia/fstringify",
     download_url="https://github.com/jacktasia/fstringify/tarball/" + VERSION,
     keywords=["utility", "strings"],
