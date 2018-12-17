@@ -20,6 +20,17 @@ deploy:
 	echo 'pypi.org Username: '
 	@read username && twine upload dist/* -u $$username;
 
+clean:
+	@bash -c "rm -rf build/"
+	@bash -c "rm -rf dist/"
+	@bash -c "rm -rf fstringify.egg-info"
+
+redeploy:
+	python setup.py bdist_wheel
+	python setup.py sdist
+	echo 'pypi.org Username: '
+	@read username && twine upload dist/* -u $$username;
+
 
 run:
 	@bash -c "PYTHONPATH=. poetry run python fstringify/__init__.py /home/jack/code/django/docs/_ext/djangodocs.py --verbose"
