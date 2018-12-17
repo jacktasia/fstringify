@@ -167,6 +167,7 @@ def fstringify_code_by_line(code, stats=False, debug=False):
                     or indie.endswith("else")
                     or indie.endswith("for")
                     or indie.endswith("in")
+                    or indie.endswith("not")
                 ):
                     indie += " "
 

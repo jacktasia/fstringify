@@ -156,7 +156,7 @@ class FstringifyTransformer(ast.NodeTransformer):
 
         # bail in these edge cases...
         if do_change:
-            no_good = ["}", "{"]
+            no_good = ["}", "{", "\n"]
             for ng in no_good:
                 if ng in node.left.s:
                     return node
