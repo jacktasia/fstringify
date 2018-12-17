@@ -1,5 +1,7 @@
 # fstringify
 
+[![asciicast](https://asciinema.org/a/CDwLsZtWg3of1xSuAOfjnr6x8.png)](https://asciinema.org/a/CDwLsZtWg3of1xSuAOfjnr6x8)
+
 *This is an alpha release. Do NOT use on uncommitted code!*
 
 `fstringify` is a command line tool to automatically convert a project's Python code from old "%-formatted" strings into Python 3.6+'s "f-strings".
@@ -20,15 +22,25 @@ since 3.6 is when "f-strings" were introduced.
 
 ### Usage
 
-To run:
+To run: `fstringify {source_file_or_directory}`
 
-```
-fstringify {source_file_or_directory}
-```
 
 ### Command line options
+```
+usage: fstringify [-h] [--verbose | --quiet] [--version] src
 
-- TODO
+fstringify 0.x.x
+
+positional arguments:
+  src         source file or directory
+
+optional arguments:
+  -h, --help  show this help message and exit
+  --verbose   run with verbose output
+  --quiet     run without output
+  --version   show version and exit
+
+```
 
 ### Other Credits / Dependencies / Links
 
