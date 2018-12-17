@@ -1,8 +1,8 @@
 # fstringify
 
-[![asciicast](https://asciinema.org/a/CDwLsZtWg3of1xSuAOfjnr6x8.png)](https://asciinema.org/a/CDwLsZtWg3of1xSuAOfjnr6x8)
-
 [![Build Status](https://travis-ci.org/jacktasia/fstringify.svg)](https://travis-ci.org/jacktasia/fstringify)
+
+[![asciicast](https://asciinema.org/a/CDwLsZtWg3of1xSuAOfjnr6x8.png)](https://asciinema.org/a/CDwLsZtWg3of1xSuAOfjnr6x8)
 
 **This is an alpha release. Do NOT use on uncommitted code!**
 
