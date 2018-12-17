@@ -2,7 +2,9 @@
 
 [![asciicast](https://asciinema.org/a/CDwLsZtWg3of1xSuAOfjnr6x8.png)](https://asciinema.org/a/CDwLsZtWg3of1xSuAOfjnr6x8)
 
-*This is an alpha release. Do NOT use on uncommitted code!*
+[![Build Status](https://travis-ci.org/jacktasia/fstringify.svg)](https://travis-ci.org/jacktasia/fstringify)
+
+**This is an alpha release. Do NOT use on uncommitted code!**
 
 `fstringify` is a command line tool to automatically convert a project's Python code from old "%-formatted" strings into Python 3.6+'s "f-strings".
 
