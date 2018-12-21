@@ -201,7 +201,7 @@ def fstringify_node(node, debug=False):
     )
 
 
-def fstringify_code(code, include_meta=False, debug=False):
+def raw_fstringify_code_block(code, include_meta=False, debug=False):
     """Convert a block of with a %-formatted string to an f-string
 
     Args:

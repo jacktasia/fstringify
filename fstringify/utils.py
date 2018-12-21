@@ -16,6 +16,11 @@ from fstringify.transform import fstringify_node
 
 
 def dump_tokenize(code):
+    """Dump a block of code as tokens to stdout.
+
+    Args:
+        code (str): Code to tokenize.
+    """
     try:
         g = tokenize.tokenize(io.BytesIO(code.encode("utf-8")).readline)
         for toknum, tokval, start, end, line in g:
@@ -23,30 +28,6 @@ def dump_tokenize(code):
 
     except tokenize.TokenError:
         pass
-
-
-def get_lines(code):
-
-    lines = []
-    last_line = None
-    last_lineno = -1
-    try:
-        g = tokenize.tokenize(io.BytesIO(code.encode("utf-8")).readline)
-        for toknum, tokval, start, end, line in g:
-            # print(start, toknum, token.tok_name[toknum], tokval)
-
-            lineno = start[0]
-
-            if line != last_line and lineno != last_line and line:
-                lines.append(line.rstrip())
-
-            last_line = line
-            last_lineno = lineno
-
-    except tokenize.TokenError:
-        pass
-
-    return lines
 
 
 def pp_code_ast(code, convert=False):
@@ -113,7 +94,12 @@ def pp_ast(node):
     print(json.dumps(ast_to_dict(node), indent=2))
 
 
-def get_indent(line):
+def get_indent(line) -> str:
+    """Return the indented whitespace
+
+    Args:
+        line (str):
+    """
     indented = INDENT_PATTERN.match(line)
     if indented:
         return indented[0]
@@ -121,21 +107,25 @@ def get_indent(line):
     return ""
 
 
-def trim_list(l):
-    last = l.pop()
-    l.pop()
-    l.append(last)
-    return l
+def get_lines(code):
+    """doesn't work. get lines from tokenizer instead"""
+    lines = []
+    last_line = None
+    last_lineno = -1
+    try:
+        g = tokenize.tokenize(io.BytesIO(code.encode("utf-8")).readline)
+        for toknum, tokval, start, end, line in g:
+            # print(start, toknum, token.tok_name[toknum], tokval)
 
+            lineno = start[0]
 
-def trim_list_until(l, length):
-    if len(l) > 1 and length == 1:
-        return [l[0]]
+            if line != last_line and lineno != last_line and line:
+                lines.append(line.rstrip())
 
-    while len(l) > length:
-        l = trim_list(l)
+            last_line = line
+            last_lineno = lineno
 
-    filler = l[-1] if l else ""
-    while len(l) < length:
-        l.append(filler)
-    return l
+    except tokenize.TokenError:
+        pass
+
+    return lines

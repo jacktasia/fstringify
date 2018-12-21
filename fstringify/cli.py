@@ -2,9 +2,7 @@ import argparse
 import sys
 
 from fstringify import __version__
-from fstringify.api import fstringify_dir, fstringify_file, fstringify
-from fstringify.transform import fstringify_code
-from fstringify.process import fstringify_code_by_line
+from fstringify.api import fstringify
 
 
 def main():
@@ -26,7 +24,7 @@ def main():
         print("fstringify", __version__)
         sys.exit(0)
 
-    fstringify(args.src, verbose=args.verbose, quiet=args.quiet)
+    sys.exit(fstringify(args.src, verbose=args.verbose, quiet=args.quiet))
 
 
 if __name__ == "__main__":

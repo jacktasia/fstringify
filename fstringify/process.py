@@ -3,7 +3,7 @@ import token
 import tokenize
 
 from fstringify.utils import get_indent, get_lines
-from fstringify.transform import fstringify_code
+from fstringify.transform import raw_fstringify_code_block
 from fstringify.format import force_double_quote_fstring
 
 
@@ -107,7 +107,7 @@ def get_str_bin_op_lines(code):
             yield (start, end)
 
 
-def fstringify_code_by_line(code, stats=False, debug=False):
+def fstringify_code_blocks(code, stats=False, debug=False):
     raw_code_lines = code.split("\n")
     no_skip_range = []
     scopes_by_idx = {}
@@ -142,7 +142,7 @@ def fstringify_code_by_line(code, stats=False, debug=False):
             continue
 
         scoped = scopes_by_idx[line_idx]
-        code_line, meta = fstringify_code(
+        code_line, meta = raw_fstringify_code_block(
             "\n".join(scoped["strip_scope"]), include_meta=True, debug=debug
         )
 

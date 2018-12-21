@@ -4,7 +4,8 @@ import json
 import unittest
 import tokenize
 
-from fstringify import fstringify_code, fstringify_file, fstringify_code_by_line
+from fstringify.api import fstringify_file, fstringify_code_blocks
+from fstringify.transform import raw_fstringify_code_block
 
 from fstringify.utils import get_indent, pp_code_ast
 from fstringify.format import force_double_quote_fstring
@@ -37,8 +38,6 @@ class FstringifyTest(unittest.TestCase):
         # print(dump_tokenize(code))
         # print("---------------------------")
 
-        # print(fstringify_code_by_line2(code))
-
         ###############
         # for x in get_str_bin_op_lines(code):
         #     print(x)
@@ -65,25 +64,25 @@ class FstringifyTest(unittest.TestCase):
         d = {"k": "blah"}
         b = f"1+{d['k']}"
         """
-        result = fstringify_code_by_line(code, debug=True)
+        result = fstringify_code_blocks(code, debug=True)
         self.assertCodeEqual(result, expected)
 
     def test_mod_var_name(self):
         code = 'b = "1+%s+2" % a'
         expected = "b = f'1+{a}+2'\n"
-        result = fstringify_code(code)
+        result = raw_fstringify_code_block(code)
         self.assertCodeEqual(result, expected)
 
     def test_mod_str_literal(self):
         code = 'b = "1+%s+2" % "a"'
         expected = "b = f\"1+{'a'}+2\"\n"
-        result = fstringify_code(code)
+        result = raw_fstringify_code_block(code)
         self.assertCodeEqual(result, expected)
 
     def test_mod_tuple(self):
         code = 'b = "1+%s+2%s3" % (a, b)'
         expected = "b = f'1+{a}+2{b}3'\n"
-        result = fstringify_code(code)
+        result = raw_fstringify_code_block(code)
         self.assertCodeEqual(result, expected)
 
     def test_var_name_self(self):
@@ -125,9 +124,7 @@ class Blah:
         print(f"--NUMBERSnumbers: {self.num}")
     """
 
-        result = fstringify_code_by_line(code, debug=False)
-
-        # print("expected\n", expected, "\nresult\n", result)
+        result = fstringify_code_blocks(code, debug=False)
 
         self.assertCodeEqual(result, expected)
 
@@ -192,7 +189,7 @@ class Foo:
         sys.exit(f"Exiting due to receiving {r.status_code} status code when expecting {expected_status}.")
 """
 
-        result = fstringify_code_by_line(code)
+        result = fstringify_code_blocks(code)
         self.assertCodeEqual(result, expected)
 
     def test_noop(self):
@@ -203,7 +200,7 @@ def cmd_test():
     data = get_quiz_data()
 """
 
-        result = fstringify_code_by_line(code, debug=False)
+        result = fstringify_code_blocks(code, debug=False)
         self.assertCodeEqual(result, code)
 
     def test_flask(self):
@@ -224,7 +221,7 @@ def cmd_test():
             self.view_functions[endpoint] = view_func
 """
 
-        result = fstringify_code_by_line(code, debug=False)
+        result = fstringify_code_blocks(code, debug=False)
         self.assertCodeEqual(result, expected)
 
     def test_flask2(self):
@@ -243,7 +240,7 @@ def cmd_test():
             src_info = f'blueprint "{srcobj.name}" ({srcobj.import_name})'
 """
 
-        result = fstringify_code_by_line(code, debug=False)
+        result = fstringify_code_blocks(code, debug=False)
         self.assertCodeEqual(result, expected)
 
     def test_django_noop(self):
@@ -261,7 +258,7 @@ def load_handler(path, *args, **kwargs):
     return import_string(path)(*args, **kwargs)
 
 '''
-        result = fstringify_code_by_line(code, debug=False)
+        result = fstringify_code_blocks(code, debug=False)
         self.assertCodeEqual(result, code)
 
     def test_django_noop2(self):
@@ -278,7 +275,7 @@ def load_handler(path, *args, **kwargs):
                 ),
             )
 """
-        result = fstringify_code_by_line(code, debug=False)
+        result = fstringify_code_blocks(code, debug=False)
         self.assertCodeEqual(result, code)
 
     def test_django_noop3(self):
@@ -289,7 +286,7 @@ def load_handler(path, *args, **kwargs):
                 (token_name, self.contents[:20].replace('\\n', '')))
 """
 
-        result = fstringify_code_by_line(code, debug=False)
+        result = fstringify_code_blocks(code, debug=False)
         self.assertCodeEqual(result, code)
 
     def test_django_noop4(self):
@@ -297,7 +294,7 @@ def load_handler(path, *args, **kwargs):
         print("this is new line: %s" % "\\n")
 """
 
-        result = fstringify_code_by_line(code, debug=False)
+        result = fstringify_code_blocks(code, debug=False)
         self.assertCodeEqual(result, code)
 
     def test_django_noop5(self):
@@ -305,7 +302,7 @@ def load_handler(path, *args, **kwargs):
         print("this is new line: %s" % "\\\\")
 """
 
-        result = fstringify_code_by_line(code, debug=False)
+        result = fstringify_code_blocks(code, debug=False)
         self.assertCodeEqual(result, code)
 
     def test_django_noop6(self):
@@ -318,7 +315,7 @@ def load_handler(path, *args, **kwargs):
                 ))
 """
 
-        result = fstringify_code_by_line(code, debug=False)
+        result = fstringify_code_blocks(code, debug=False)
         self.assertCodeEqual(result, code)
 
     def test_django_noop7(self):
@@ -331,7 +328,7 @@ def load_handler(path, *args, **kwargs):
         queryset = queryset.filter(**query)
 """
 
-        result = fstringify_code_by_line(code, debug=False, stats=True)
+        result = fstringify_code_blocks(code, debug=False, stats=True)
         # self.assertEqual(meta["changes"], 0)
         self.assertCodeEqual(result, code)
 
@@ -340,7 +337,7 @@ def load_handler(path, *args, **kwargs):
     hint = "\n\tHINT: %s" % self.hint if self.hint else ''
 """
 
-        result = fstringify_code_by_line(code, debug=False, stats=True)
+        result = fstringify_code_blocks(code, debug=False, stats=True)
 
         self.assertCodeEqual(result, code)
 
@@ -349,7 +346,7 @@ def load_handler(path, *args, **kwargs):
     hint = "HINT: %s" % self.hint if self.hint else ''
 """
 
-        result = fstringify_code_by_line(code, debug=False, stats=True)
+        result = fstringify_code_blocks(code, debug=False, stats=True)
 
         self.assertCodeEqual(result, code)
 
@@ -358,7 +355,7 @@ def load_handler(path, *args, **kwargs):
 hint = "HINT: %s" % (self.hint if self.hint else '')
 """
         # pp_code_ast(code)
-        result = fstringify_code_by_line(code, debug=False, stats=True)
+        result = fstringify_code_blocks(code, debug=False, stats=True)
 
         self.assertCodeEqual(result, code)
 
