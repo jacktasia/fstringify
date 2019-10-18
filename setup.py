@@ -12,7 +12,7 @@ BASE_DIR = Path(__file__).parent
 # forked from black's setup.py
 def get_long_description():
     """Load README for long description"""
-    readme_md = BASE_DIR / "README.md"
+    readme_md = BASE_DIR / "README.rst"
     with open(readme_md, encoding="utf8") as readme_f:
         return readme_f.read()
 
