@@ -1,4 +1,4 @@
-__version__ = "0.1.13"
+__version__ = "0.1.14"
 
 
 import argparse
@@ -18,15 +18,15 @@ def main():
     group.add_argument("--verbose", action="store_true", help="run with verbose output")
     group.add_argument("--quiet", action="store_true", help="run without output")
     parser.add_argument(
-        "--version", action="store_true", default=False, help="show version and exit"
+        "--version",
+        action="version",
+        default=False,
+        help="show version and exit",
+        version=__version__,
     )
     parser.add_argument("src", action="store", help="source file or directory")
 
     args = parser.parse_args()
-
-    if args.version:
-        print("fstringify", __version__)
-        sys.exit(0)
 
     fstringify(args.src, verbose=args.verbose, quiet=args.quiet)
 
