@@ -3,6 +3,7 @@ import os
 import json
 import unittest
 import tokenize
+import sys
 
 from fstringify import fstringify_code, fstringify_file, fstringify_code_by_line
 
@@ -392,11 +393,19 @@ def write_row(self, xf, row, row_idx):
 
     attrs = {'r': '%d' % row_idx}
         """
-        expected = """
+        expected37 = """
+def write_row(self, xf, row, row_idx):
+    attrs = {'r': f"{row_idx}"}
+        """
+
+        expected36 = """
 def write_row(self, xf, row, row_idx):
 
     attrs = {'r': f"{row_idx}"}
         """
+
+        expected = expected36 if sys.version_info <= (3, 7, 0) else expected37
+
         result = fstringify_code_by_line(code, debug=False, stats=True)
 
         self.assertCodeEqual(result, expected)
