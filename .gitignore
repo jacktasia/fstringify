@@ -1,3 +1,6 @@
 **/__pycache__/**
 *.pyc
 
+bin
+fstringify.egg-info
+lib

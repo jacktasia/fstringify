@@ -387,5 +387,20 @@ hint = "HINT: %s" % (self.hint if self.hint else '')
         self.assertCodeEqual(result, code)
 
 
+    def test_preceding_line_is_blank(self):
+        code = """
+def write_row(self, xf, row, row_idx):
+
+    attrs = {'r': '%d' % row_idx}
+        """
+        expected = """
+def write_row(self, xf, row, row_idx):
+    attrs = {'r': f"{row_idx}"}
+        """
+        result = fstringify_code_by_line(code, debug=False, stats=True)
+
+        self.assertCodeEqual(result, expected)
+
+
 if __name__ == "__main__":
     unittest.main()

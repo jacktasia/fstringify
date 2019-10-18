@@ -84,7 +84,7 @@ def get_str_bin_op_lines(code):
         last_toknum = None
         last_tokval = None
         found = False
-        for toknum, tokval, _, _, _ in chunk:
+        for toknum, tokval, *rest in chunk:
             if (
                 toknum == 53
                 and tokval == "%"
@@ -107,7 +107,7 @@ def get_str_bin_op_lines(code):
             yield (start, end)
 
 
-def fstringify_code_by_line(code, stats=False, debug=False):
+def no_skipping(code):
     raw_code_lines = code.split("\n")
     no_skip_range = []
     scopes_by_idx = {}
@@ -121,18 +121,50 @@ def fstringify_code_by_line(code, stats=False, debug=False):
         if not raw_scope:
             continue
 
+        for line in raw_scope:
+            if line:
+                indent = get_indent(line)
+                break
+
         strip_scope = map(lambda x: x.strip(), raw_scope)
         scopes_by_idx[start_idx] = dict(
             raw_scope=raw_scope,
             strip_scope=strip_scope,
-            indent=get_indent(raw_scope[0]),
+            indent=indent,
         )
         no_skip_range += list(range(start_idx, end))
+    return no_skip_range, scopes_by_idx
+
+
+def rebuild_transformed_lines(code, indent):
+    code_line_parts = code.strip().split("\n")
+    code_block = ""
+    for idx, cline in enumerate(code_line_parts):
+        code_line_strip = cline.lstrip()  # if change_add else cline
+        if idx == 0:
+            code_block = indent + code_line_strip
+        else:
+            if (
+                code_block.endswith(",")
+                or code_block.endswith("else")
+                or code_block.endswith("for")
+                or code_block.endswith("in")
+                or code_block.endswith("not")
+            ):
+                code_block += " "
+
+            code_block += cline.strip()
+
+    return code_block
+
+
+def fstringify_code_by_line(code, stats=False, debug=False):
+    raw_code_lines = code.split("\n")
+    no_skip_range, scopes_by_idx = no_skipping(code)
 
     result_lines = []
     for line_idx, raw_line in enumerate(raw_code_lines):
         lineno = line_idx + 1
-        indented = get_indent(raw_line)
 
         if line_idx not in no_skip_range:
             result_lines.append(raw_line)
@@ -157,23 +189,7 @@ def fstringify_code_by_line(code, stats=False, debug=False):
 
         indie = ""
         indent = scoped["indent"]
-        for idx, cline in enumerate(code_line_parts):
-            code_line_strip = cline.lstrip()  # if change_add else cline
-            if idx == 0:
-                indie = indent + code_line_strip
-            else:
-                if (
-                    indie.endswith(",")
-                    or indie.endswith("else")
-                    or indie.endswith("for")
-                    or indie.endswith("in")
-                    or indie.endswith("not")
-                ):
-                    indie += " "
-
-                indie += cline.strip()
-                # else:
-                #     indie += cline.strip()
+        indie = rebuild_transformed_lines(code_line, scoped["indent"])
 
         result_lines.append(indie)
 

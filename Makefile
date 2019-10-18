@@ -10,6 +10,9 @@ test:
 
 citest:
 	@bash -c "PYTHONPATH=. python tests/test_fstringify.py"
+	
+install-dev:
+	pip install -r requirements-dev.txt
 
 deploy:
 	pip install twine wheel
