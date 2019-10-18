@@ -29,7 +29,7 @@ def get_version():
 
 
 def get_requirements():
-    with open("requirements.txt", "utf-8") as fp:
+    with open("requirements.txt", encoding="utf-8") as fp:
         return fp.read()
 
 
