@@ -11,7 +11,7 @@ def fstringify_file(fn):
     if skip_file(fn):
         return False
 
-    with open(fn) as f:
+    with open(fn, encoding="utf8") as f:
         contents = f.read()
 
     new_code = fstringify_code_by_line(contents)
@@ -19,7 +19,7 @@ def fstringify_file(fn):
     if new_code == contents:
         return False
 
-    with open(fn, "w") as f:
+    with open(fn, "w", encoding="utf8") as f:
         f.write(new_code)
 
     return True
