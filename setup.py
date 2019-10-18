@@ -29,7 +29,7 @@ def get_version():
 
 
 def get_requirements():
-    with open("requirements.txt") as fp:
+    with open("requirements.txt", "utf-8") as fp:
         return fp.read()
 
 
@@ -55,6 +55,7 @@ setup(
     ],
     license="GNU General Public License v3.0",
     long_description=get_long_description(),
+    long_description_content_type="text/markdown",
     install_requires=get_requirements(),
     entry_points={"console_scripts": ["fstringify=fstringify:main"]},
 )
