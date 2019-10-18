@@ -68,6 +68,30 @@ class FstringifyTest(unittest.TestCase):
         result = fstringify_code_by_line(code, debug=True)
         self.assertCodeEqual(result, expected)
 
+    def test_mod_func(self):
+        code = """print('leoBridgeTest.py: argv: %s' % repr(sys.argv))"""
+        # pp_code_ast(code)
+
+        expected = """print(f'leoBridgeTest.py: argv: {repr(sys.argv)}')
+"""
+        result = fstringify_code(code, debug=True)
+        self.assertCodeEqual(result, expected)
+
+    def test_mod_func2(self):
+        code = """
+if __name__ == '__main__':
+    print('leoBridgeTest.py: argv: %s' % repr(sys.argv))
+    main()
+"""
+        # pp_code_ast(code)
+
+        expected = """if __name__ == '__main__':
+    print(f'leoBridgeTest.py: argv: {repr(sys.argv)}')
+    main()
+"""
+        result = fstringify_code(code, debug=True)
+        self.assertCodeEqual(result, expected)
+
     def test_mod_var_name(self):
         code = 'b = "1+%s+2" % a'
         expected = "b = f'1+{a}+2'\n"

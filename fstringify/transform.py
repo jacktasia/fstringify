@@ -115,7 +115,7 @@ def handle_from_mod_generic_name(node):
 
 
 def handle_from_mod(node):
-    if isinstance(node.right, (ast.Name, ast.Attribute, ast.Str)):
+    if isinstance(node.right, (ast.Name, ast.Attribute, ast.Str, ast.Call)):
         return handle_from_mod_generic_name(node)
 
     elif isinstance(node.right, ast.Tuple):
@@ -150,7 +150,9 @@ class FstringifyTransformer(ast.NodeTransformer):
         do_change = (
             isinstance(node.left, ast.Str)
             and isinstance(node.op, ast.Mod)
-            and isinstance(node.right, (ast.Tuple, ast.Name, ast.Attribute, ast.Str))
+            and isinstance(
+                node.right, (ast.Tuple, ast.Name, ast.Attribute, ast.Str, ast.Call)
+            )
             # ignore ast.Dict on right
         )
 
