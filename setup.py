@@ -39,7 +39,7 @@ setup(
     name="fstringify",
     packages=["fstringify"],
     version=VERSION,
-    description="CLI tool to convert a python project's %-formatted strings to f-strings.",
+    description="CLI tool to convert a python project's old style strings to f-strings.",
     author="Jack Angers",
     author_email="jacktasia@gmail.com",
     url="https://github.com/jacktasia/fstringify",
